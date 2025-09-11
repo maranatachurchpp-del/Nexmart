@@ -14,9 +14,14 @@ import {
   PieChart,
   Target,
   Users,
-  Building2
+  Building2,
+  Sparkles,
+  Brain,
+  ChartBar,
+  Globe
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -45,7 +50,9 @@ const Index = () => {
               <a href="#sobre" className="text-muted-foreground hover:text-primary transition-colors">Sobre</a>
               <a href="#beneficios" className="text-muted-foreground hover:text-primary transition-colors">Benefícios</a>
               <a href="#precos" className="text-muted-foreground hover:text-primary transition-colors">Preços</a>
-              <Button variant="outline" size="sm">Entrar</Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/auth">Entrar</Link>
+              </Button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -67,7 +74,9 @@ const Index = () => {
                 <a href="#sobre" className="text-muted-foreground hover:text-primary transition-colors">Sobre</a>
                 <a href="#beneficios" className="text-muted-foreground hover:text-primary transition-colors">Benefícios</a>
                 <a href="#precos" className="text-muted-foreground hover:text-primary transition-colors">Preços</a>
-                <Button variant="outline" size="sm" className="w-fit">Entrar</Button>
+                <Button variant="outline" size="sm" className="w-fit" asChild>
+                  <Link to="/auth">Entrar</Link>
+                </Button>
               </div>
             </div>
           )}
@@ -75,41 +84,80 @@ const Index = () => {
       </header>
 
       <main>
-        {/* Hero Section */}
-        <section id="inicio" className="py-20 lg:py-32 bg-gradient-to-br from-background to-secondary/20">
-          <div className="container mx-auto px-4 text-center">
-            <Badge variant="secondary" className="mb-6">🚀 Novo: Dashboard Inteligente com IA</Badge>
+        {/* Hero Section - Redesigned */}
+        <section id="inicio" className="relative py-24 lg:py-36 overflow-hidden">
+          {/* Background with gradient and subtle animation */}
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-secondary/30 to-primary/10"></div>
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-success/5 rounded-full blur-3xl"></div>
+          
+          <div className="relative container mx-auto px-4 text-center">
+            <div className="mb-6 flex justify-center">
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-medium bg-gradient-primary text-primary-foreground">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Novo: IA Integrada para Análise Preditiva
+              </Badge>
+            </div>
             
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-              Domine sua Estrutura<br />
-              <span className="bg-gradient-primary bg-clip-text text-transparent">Mercadológica</span><br />
-              e Lucre Mais
+            <h1 className="text-5xl md:text-7xl font-extrabold text-foreground mb-8 leading-tight tracking-tight">
+              Transforme seu<br />
+              <span className="bg-gradient-primary bg-clip-text text-transparent">Supermercado</span><br />
+              em uma máquina de lucros
             </h1>
             
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              O SaaS completo para supermercados até R$ 4 milhões/ano. 
-              Estruture departamentos, categorias e produtos com indicadores estratégicos automatizados.
+            <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed">
+              A plataforma de gestão mercadológica mais avançada do Brasil.<br />
+              <strong className="text-foreground">Estrutura + KPIs + IA</strong> para supermercados até R$ 4MM/ano.
             </p>
 
-            {/* Email Capture Form */}
-            <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-8">
-              <Input
-                type="email"
-                placeholder="Digite seu e-mail profissional"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="text-center sm:text-left"
-                required
-              />
-              <Button type="submit" size="lg" className="bg-gradient-primary hover:opacity-90">
-                Teste Grátis 7 dias
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </form>
+            {/* CTA Section */}
+            <div className="max-w-lg mx-auto mb-12">
+              <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 mb-6">
+                <Input
+                  type="email"
+                  placeholder="seu-email@supermercado.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="text-center sm:text-left h-14 text-lg bg-card border-2 border-border focus:border-primary"
+                  required
+                />
+                <Button type="submit" size="lg" className="h-14 px-8 text-lg bg-gradient-primary hover:opacity-90 shadow-strong">
+                  Começar Grátis
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </form>
 
-            <p className="text-sm text-muted-foreground">
-              ✅ Sem cartão de crédito • ✅ Configuração em 5 minutos • ✅ Suporte dedicado
-            </p>
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-success" />
+                  Teste 14 dias grátis
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-success" />
+                  Sem cartão
+                </div>
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-success" />
+                  Setup em 3 min
+                </div>
+              </div>
+            </div>
+
+            {/* Social proof numbers */}
+            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">500+</div>
+                <div className="text-sm text-muted-foreground">Supermercados</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-success mb-2">18%</div>
+                <div className="text-sm text-muted-foreground">Aumento médio na margem</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-warning mb-2">4.9★</div>
+                <div className="text-sm text-muted-foreground">Avaliação média</div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -125,67 +173,67 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <Card className="text-center hover:shadow-medium transition-shadow">
-                <CardHeader>
-                  <div className="mx-auto w-12 h-12 bg-primary-light/20 rounded-lg flex items-center justify-center mb-4">
-                    <Building2 className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Estrutura Padronizada</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-                    Base mercadológica completa: Departamentos → Categorias → Subcategorias → Produtos. 
-                    Pronta para usar!
-                  </CardDescription>
-                </CardContent>
-              </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="text-center hover:shadow-strong transition-all duration-300 group">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Building2 className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Estrutura Padronizada</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base leading-relaxed">
+                  Base mercadológica completa: Departamentos → Categorias → Subcategorias → Produtos. 
+                  <strong className="text-foreground">Pronta para usar!</strong>
+                </CardDescription>
+              </CardContent>
+            </Card>
 
-              <Card className="text-center hover:shadow-medium transition-shadow">
-                <CardHeader>
-                  <div className="mx-auto w-12 h-12 bg-success-light rounded-lg flex items-center justify-center mb-4">
-                    <PieChart className="h-6 w-6 text-success" />
-                  </div>
-                  <CardTitle className="text-lg">Dashboard Inteligente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-                    KPIs em tempo real: margens, quebras, mix de marcas. 
-                    Alertas automáticos para tomada de decisão rápida.
-                  </CardDescription>
-                </CardContent>
-              </Card>
+            <Card className="text-center hover:shadow-strong transition-all duration-300 group">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-success/20 to-success/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Brain className="h-8 w-8 text-success" />
+                </div>
+                <CardTitle className="text-xl mb-2">IA Integrada</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base leading-relaxed">
+                  KPIs em tempo real com análise preditiva: margens, quebras, mix de marcas. 
+                  <strong className="text-foreground">Alertas inteligentes</strong> para decisões rápidas.
+                </CardDescription>
+              </CardContent>
+            </Card>
 
-              <Card className="text-center hover:shadow-medium transition-shadow">
-                <CardHeader>
-                  <div className="mx-auto w-12 h-12 bg-warning-light rounded-lg flex items-center justify-center mb-4">
-                    <TrendingUp className="h-6 w-6 text-warning" />
-                  </div>
-                  <CardTitle className="text-lg">Relatórios Estratégicos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-                    Análises comparativas, benchmarks do setor e relatórios personalizados. 
-                    Exporte em PDF/Excel.
-                  </CardDescription>
-                </CardContent>
-              </Card>
+            <Card className="text-center hover:shadow-strong transition-all duration-300 group">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-warning/20 to-warning/30 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <ChartBar className="h-8 w-8 text-warning" />
+                </div>
+                <CardTitle className="text-xl mb-2">Relatórios Avançados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base leading-relaxed">
+                  Análises comparativas, benchmarks do setor e relatórios personalizados com IA. 
+                  <strong className="text-foreground">Export automático</strong> PDF/Excel.
+                </CardDescription>
+              </CardContent>
+            </Card>
 
-              <Card className="text-center hover:shadow-medium transition-shadow">
-                <CardHeader>
-                  <div className="mx-auto w-12 h-12 bg-accent rounded-lg flex items-center justify-center mb-4">
-                    <Zap className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">Fácil de Usar</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>
-                    Interface intuitiva, mesmo para pequenos mercados. 
-                    Configuração completa em menos de 5 minutos.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="text-center hover:shadow-strong transition-all duration-300 group">
+              <CardHeader>
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-accent/30 to-primary/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Globe className="h-8 w-8 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Multi-plataforma</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-base leading-relaxed">
+                  Acesse de qualquer lugar: web, tablet, mobile. 
+                  <strong className="text-foreground">Sincronização automática</strong> entre dispositivos.
+                </CardDescription>
+              </CardContent>
+            </Card>
+          </div>
           </div>
         </section>
 
@@ -229,8 +277,8 @@ const Index = () => {
                     <CheckCircle className="h-5 w-5 text-success" />
                     <span className="text-sm">Suporte por email</span>
                   </div>
-                  <Button className="w-full mt-6" variant="outline">
-                    Começar Teste Grátis
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link to="/auth">Começar Teste Grátis</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -269,8 +317,8 @@ const Index = () => {
                     <CheckCircle className="h-5 w-5 text-success" />
                     <span className="text-sm">Suporte prioritário</span>
                   </div>
-                  <Button className="w-full mt-6 bg-gradient-primary hover:opacity-90">
-                    Começar Teste Grátis
+                  <Button className="w-full bg-gradient-primary hover:opacity-90 shadow-medium" asChild>
+                    <Link to="/auth">Começar Teste Grátis</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -306,8 +354,8 @@ const Index = () => {
                     <CheckCircle className="h-5 w-5 text-success" />
                     <span className="text-sm">Gerente de sucesso</span>
                   </div>
-                  <Button className="w-full mt-6" variant="outline">
-                    Falar com Vendas
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link to="/auth">Falar com Vendas</Link>
                   </Button>
                 </CardContent>
               </Card>
