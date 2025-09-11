@@ -93,7 +93,7 @@ const Auth = () => {
           setError("Erro no cadastro. Tente novamente.");
         }
       } else {
-        setSuccess("Conta criada com sucesso! Verifique seu email para confirmar.");
+        setSuccess("Conta criada com sucesso! Bem-vindo ao Mercadológico SaaS!");
         // Redirect to onboarding after successful registration
         setTimeout(() => navigate("/onboarding"), 2000);
       }

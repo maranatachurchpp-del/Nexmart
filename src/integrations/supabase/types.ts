@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          annual_revenue: string | null
+          company_name: string | null
+          created_at: string
+          experience_level: string | null
+          focus_areas: string[] | null
+          id: string
+          main_objective: string | null
+          name: string | null
+          onboarding_completed: boolean | null
+          store_count: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_revenue?: string | null
+          company_name?: string | null
+          created_at?: string
+          experience_level?: string | null
+          focus_areas?: string[] | null
+          id?: string
+          main_objective?: string | null
+          name?: string | null
+          onboarding_completed?: boolean | null
+          store_count?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_revenue?: string | null
+          company_name?: string | null
+          created_at?: string
+          experience_level?: string | null
+          focus_areas?: string[] | null
+          id?: string
+          main_objective?: string | null
+          name?: string | null
+          onboarding_completed?: boolean | null
+          store_count?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
