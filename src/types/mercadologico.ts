@@ -48,3 +48,48 @@ export interface AlertaVisual {
   mensagem: string;
   severidade: 'success' | 'warning' | 'destructive';
 }
+
+export interface KPIData {
+  faturamento: {
+    valor: number;
+    variacao: number;
+  };
+  margemBruta: {
+    valor: number;
+    variacao: number;
+  };
+  ruptura: {
+    valor: number;
+    meta: number;
+  };
+  ticketMedio: {
+    valor: number;
+    variacao: number;
+  };
+  mixMarcas: {
+    atual: number;
+    recomendado: { min: number; max: number };
+  };
+  itensKVI: {
+    quantidade: number;
+    participacaoReceita: number;
+  };
+}
+
+export interface DashboardFilters {
+  periodo: {
+    inicio: Date;
+    fim: Date;
+  };
+  loja?: string;
+  departamento?: string;
+  categoria?: string;
+  subcategoria?: string;
+  kvi?: 'sim' | 'nao' | 'todos';
+}
+
+export interface TimeSeriesData {
+  data: string;
+  faturamento: number;
+  margem: number;
+}
