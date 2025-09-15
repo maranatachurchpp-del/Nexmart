@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
 import MercadologicalStructure from "./pages/MercadologicalStructure";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,11 @@ const AuthenticatedApp = () => {
       <Route path="/structure" element={
         <ProtectedRoute>
           <MercadologicalStructure />
+        </ProtectedRoute>
+      } />
+      <Route path="/reports" element={
+        <ProtectedRoute>
+          <Reports />
         </ProtectedRoute>
       } />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
