@@ -348,36 +348,37 @@ const Index = () => {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {/* Plano Básico */}
+              {/* Plano Essencial */}
               <Card className="relative hover:shadow-xl transition-all duration-300 hover-scale">
                 <CardHeader className="text-center">
-                  <Badge variant="secondary" className="w-fit mx-auto mb-4">Ideal para pequenos mercados</Badge>
-                  <CardTitle className="text-2xl">Plano Básico</CardTitle>
+                  <Badge variant="secondary" className="w-fit mx-auto mb-4">Ideal para organizar</Badge>
+                  <CardTitle className="text-2xl">Plano Essencial</CardTitle>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-foreground">R$ 10</span>
-                    <span className="text-muted-foreground">/usuário/mês</span>
+                    <span className="text-4xl font-bold text-foreground">R$ 79,90</span>
+                    <span className="text-muted-foreground">/loja/mês</span>
                   </div>
+                  <CardDescription>ou R$ 799,00/ano (2 meses grátis)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Dashboard Essencial com KPIs principais</span>
+                    <span className="text-sm">Dashboard com KPIs estratégicos</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Estrutura Mercadológica completa</span>
+                    <span className="text-sm">Gestão da Estrutura Mercadológica</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Importação de dados padrão</span>
+                    <span className="text-sm">Importação de dados via planilha</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Relatórios básicos em PDF/Excel</span>
+                    <span className="text-sm">Relatórios em PDF e Excel</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Suporte por email</span>
+                    <span className="text-sm">Suporte via e-mail</span>
                   </div>
                   <Button className="w-full mt-6" variant="outline" asChild>
                     <Link to="/auth">Comece Grátis</Link>
@@ -391,33 +392,34 @@ const Index = () => {
                   <Badge className="bg-gradient-to-r from-primary to-success text-white px-6 py-2">Mais Completo</Badge>
                 </div>
                 <CardHeader className="text-center pt-8">
-                  <Badge variant="secondary" className="w-fit mx-auto mb-4">Ideal para crescimento</Badge>
+                  <Badge variant="secondary" className="w-fit mx-auto mb-4">Ideal para acelerar</Badge>
                   <CardTitle className="text-2xl">Plano Pro</CardTitle>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-foreground">R$ 20</span>
-                    <span className="text-muted-foreground">/usuário/mês</span>
+                    <span className="text-4xl font-bold text-foreground">R$ 149,90</span>
+                    <span className="text-muted-foreground">/loja/mês</span>
                   </div>
+                  <CardDescription>ou R$ 1.499,00/ano (2 meses grátis)</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm font-medium">Tudo do Básico +</span>
+                    <span className="text-sm font-medium">Tudo do Essencial +</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Alertas Inteligentes automatizados</span>
+                    <span className="text-sm font-bold text-primary">Alertas Inteligentes (IA)</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Importação Avançada com mapeamento</span>
+                    <span className="text-sm font-bold text-primary">Importação Avançada</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Relatórios Premium personalizados</span>
+                    <span className="text-sm">Benchmarks de Mercado (em breve)</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-success flex-shrink-0" />
-                    <span className="text-sm">Suporte Prioritário via chat/telefone</span>
+                    <span className="text-sm">Suporte Prioritário via WhatsApp</span>
                   </div>
                   <Button className="w-full mt-6 bg-gradient-to-r from-primary to-success hover:opacity-90" asChild>
                     <Link to="/auth">Comece Grátis</Link>
