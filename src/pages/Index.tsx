@@ -675,7 +675,7 @@ const Index = () => {
           </div>
           
           <div className="border-t border-border mt-12 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Nexmart. Todos os direitos reservados. Feito com ❤️ para supermercados brasileiros.</p>
+            <p>&copy; 2025 Nexmart. Todos os direitos reservados. Feito com ❤️ para supermercados brasileiros.</p>
           </div>
         </div>
       </footer>
