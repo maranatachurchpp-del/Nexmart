@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,7 @@ interface UserData {
 
 export default function Admin() {
   const { user } = useAuth();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
@@ -53,17 +55,16 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Simple admin check - in production you'd have proper role-based access
-  const isAdmin = user?.email === 'admin@nexmart.com' || user?.email?.includes('admin');
-
   useEffect(() => {
+    if (rolesLoading) return; // Wait for roles to load
+    
     if (!isAdmin) {
       navigate('/dashboard');
       return;
     }
     
     fetchAdminData();
-  }, [isAdmin, navigate]);
+  }, [isAdmin, rolesLoading, navigate]);
 
   const fetchAdminData = async () => {
     try {
@@ -127,6 +128,18 @@ export default function Admin() {
     }).format(value);
   };
 
+  // Show loading while checking roles
+  if (rolesLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verificando permissões...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -135,7 +148,7 @@ export default function Admin() {
             <X className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Acesso Negado</h2>
             <p className="text-muted-foreground mb-4">
-              Você não tem permissão para acessar esta área.
+              Você não tem permissão de administrador para acessar esta área.
             </p>
             <Button onClick={() => navigate('/dashboard')}>
               Voltar ao Dashboard
