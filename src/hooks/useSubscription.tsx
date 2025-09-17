@@ -33,7 +33,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Usamos useCallback para evitar recriação da função em cada renderização
   const fetchSubscription = useCallback(async () => {
     if (!user) {
       setSubscription(null);
@@ -43,7 +42,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     setLoading(true);
     try {
-      // Busca a assinatura ativa ou em trial do usuário
       const { data, error } = await supabase
         .from('subscriptions')
         .select(`
@@ -59,16 +57,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      // Valida se o plano veio corretamente antes de setar a assinatura
       if (data && data.plan) {
-         setSubscription(data as UserSubscription);
+         // Corrigido: Garante que data.plan não é uma lista
+         const planData = Array.isArray(data.plan) ? data.plan[0] : data.plan;
+         setSubscription({ ...data, plan: planData } as UserSubscription);
       } else {
         setSubscription(null);
       }
 
     } catch (error) {
       console.error('Erro ao buscar assinatura:', error);
-      setSubscription(null); // Garante que o estado fique limpo em caso de erro
+      setSubscription(null);
     } finally {
       setLoading(false);
     }
@@ -81,7 +80,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const value = {
     subscription,
     loading,
-    hasAccess: !!subscription,
+    hasAccess: !!subscription && (subscription.status === 'active' || subscription.status === 'trialing'),
     refreshSubscription: fetchSubscription,
   };
 
