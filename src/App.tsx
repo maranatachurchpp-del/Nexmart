@@ -13,6 +13,7 @@ import Onboarding from "./pages/Onboarding";
 import MercadologicalStructure from "./pages/MercadologicalStructure";
 import Reports from "./pages/Reports";
 import Subscription from "./pages/Subscription";
+import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -48,6 +49,11 @@ const AuthenticatedApp = () => {
       <Route path="/subscription" element={
         <ProtectedRoute>
           <Subscription />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
         </ProtectedRoute>
       } />
       <Route path="/admin" element={

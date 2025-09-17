@@ -5,6 +5,7 @@ import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, LogOut, User, Settings, Upload, TrendingUp, DollarSign, AlertTriangle, ShoppingCart, Package, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
@@ -17,6 +18,7 @@ import { produtosSample } from '@/data/mercadologico-data';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
       inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -85,7 +87,7 @@ const Dashboard = () => {
                   <Upload className="w-4 h-4 mr-2" />
                   Importar CSV
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
                 </Button>
