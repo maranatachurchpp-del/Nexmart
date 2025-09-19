@@ -1,166 +1,286 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { loadStripe } from '@stripe/stripe-js';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle, ArrowLeft, CreditCard } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { Link } from 'react-router-dom';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Crown, Check, CreditCard, Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-
-const plans = [
-  {
-    id: 'price_1PttZkRvxK3sE9t3jH5g7fX8', // IMPORTANTE: VERIFIQUE SE ESTE É SEU PRICE ID CORRETO
-    name: 'Essencial',
-    price: 79.90,
-    features: [
-      'Dashboard com KPIs estratégicos',
-      'Gestão da Estrutura Mercadológica',
-      'Importação de dados via planilha',
-      'Relatórios em PDF e Excel',
-      'Suporte via e-mail',
-    ],
-  },
-  {
-    id: 'price_1PttaHRvxK3sE9t3bI7g6eZ9', // IMPORTANTE: VERIFIQUE SE ESTE É SEU PRICE ID CORRETO
-    name: 'Pro',
-    price: 149.90,
-    features: [
-      'Tudo do Essencial +',
-      'Alertas Inteligentes (IA)',
-      'Importação Avançada',
-      'Benchmarks de Mercado (em breve)',
-      'Suporte Prioritário via WhatsApp',
-    ],
-  },
-];
-
-const SubscriptionPage = () => {
+export default function Subscription() {
+  const { subscription, plans, isTrialing, trialDaysLeft, loading } = useSubscription();
   const { user } = useAuth();
-  const { subscription, loading: subLoading } = useSubscription();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
-  const [error, setError] = useState('');
 
-  const handleSubscribe = async (priceId: string) => {
-    if (!user) {
-      toast({
-        title: 'Ação necessária',
-        description: 'Você precisa estar logado para assinar um plano.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setLoading({ [priceId]: true });
-    setError('');
-
-    try {
-      const { data, error: invokeError } = await supabase.functions.invoke('create-checkout-session', {
-        body: { priceId },
-      });
-
-      if (invokeError) {
-        const errorMessage = invokeError.context?.error?.message || invokeError.message || 'Falha ao iniciar o checkout.';
-        throw new Error(errorMessage);
-      }
-
-      const { sessionId } = data;
-      if (!sessionId) throw new Error('ID da sessão de checkout não foi recebido do servidor.');
-
-      const stripe = await stripePromise;
-      if (!stripe) throw new Error('Stripe.js não foi carregado.');
-      
-      await stripe.redirectToCheckout({ sessionId });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ocorreu um erro inesperado.');
-    } finally {
-      setLoading({ [priceId]: false });
-    }
+  const handleSubscribe = async (planId: string) => {
+    setSelectedPlan(planId);
+    
+    // Here you would integrate with Stripe
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A integração com pagamentos será implementada em breve.",
+    });
+    
+    setSelectedPlan(null);
   };
-  
-  const formatPrice = (price: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
-  if (subLoading) {
-    return <div className="flex h-screen items-center justify-center">Carregando...</div>;
-  }
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price);
+  };
 
-  if (subscription && subscription.status === 'active') {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-          <CardHeader>
-            <CardTitle>Você já tem uma assinatura ativa!</CardTitle>
-            <CardDescription>Seu plano {subscription.plan.name} está ativo.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link to="/dashboard">Ir para o Dashboard</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando planos...</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background p-4 flex flex-col items-center justify-center">
-      <div className="w-full max-w-4xl">
-        <Button variant="ghost" className="mb-8 text-muted-foreground hover:text-foreground" asChild>
-          <Link to="/dashboard">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar para o Dashboard
-          </Link>
-        </Button>
+  const paidPlans = plans.filter(plan => plan.name !== 'Teste Gratuito');
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Escolha seu Plano</h1>
-          <p className="text-muted-foreground">Comece a transformar a gestão do seu supermercado.</p>
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center gap-4 mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
         </div>
-      
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">Escolha seu plano</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Desbloqueie todo o potencial do Nexmart e leve sua gestão mercadológica para o próximo nível
+          </p>
+        </div>
+
+        {/* Current Plan Status */}
+        {subscription && (
+          <Card className="mb-8 border-primary">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <Crown className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Plano Atual: {subscription.plan.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {isTrialing ? (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          {trialDaysLeft} dias restantes no teste
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Próxima cobrança: {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={isTrialing ? 'secondary' : 'default'}>
+                  {isTrialing ? 'Teste' : 'Ativo'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-          {plans.map((plan) => (
-            <Card key={plan.name} className={`flex flex-col ${plan.name === 'Pro' ? 'border-primary' : ''}`}>
-              <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{formatPrice(plan.price)}/mês</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 flex-grow">
-                <ul className="space-y-2">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start">
-                      <CheckCircle className="w-4 h-4 mr-2 mt-1 text-success flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+        {/* Plans Grid */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {paidPlans.map((plan) => {
+            const isCurrentPlan = subscription?.plan_id === plan.id;
+            const isRecommended = plan.name === 'Pro';
+            
+            return (
+              <Card key={plan.id} className={`relative overflow-hidden ${
+                isRecommended ? 'border-primary shadow-lg scale-105' : ''
+              } ${isCurrentPlan ? 'border-green-500 bg-green-50 dark:bg-green-900/10' : ''}`}>
+                {isRecommended && (
+                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-sm font-medium">
+                    Recomendado
+                  </div>
+                )}
+                
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold">{formatPrice(plan.price_monthly)}</span>
+                    <span className="text-muted-foreground">/mês</span>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pb-6">
+                  <ul className="space-y-3">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <Separator className="my-4" />
+                  
+                  <div className="text-sm text-muted-foreground">
+                    <p>Até {plan.max_users} usuário{plan.max_users > 1 ? 's' : ''}</p>
+                  </div>
+                </CardContent>
+                
+                <CardFooter>
+                  {isCurrentPlan ? (
+                    <Button disabled className="w-full">
+                      <Crown className="h-4 w-4 mr-2" />
+                      Plano Atual
+                    </Button>
+                  ) : isTrialing ? (
+                    <Button 
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={selectedPlan === plan.id}
+                      className="w-full"
+                    >
+                      {selectedPlan === plan.id ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Processando...
+                        </div>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Assinar Agora
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={selectedPlan === plan.id}
+                      className="w-full"
+                    >
+                      Fazer Upgrade
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Features Comparison */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-center mb-8">Comparação de Funcionalidades</h2>
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-4 font-medium">Funcionalidade</th>
+                        <th className="text-center p-4 font-medium">Essencial</th>
+                        <th className="text-center p-4 font-medium">Pro</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        'Dashboard Completo',
+                        'Estrutura Mercadológica',
+                        'Relatórios Básicos',
+                        'Importação Padrão',
+                        'Suporte por Email',
+                        'Alertas Inteligentes',
+                        'Relatórios Premium',
+                        'Importação Avançada',
+                        'Suporte Prioritário',
+                        'Dashboard Avançado'
+                      ].map((feature, index) => {
+                        const inEssential = index < 5;
+                        const inPro = true;
+                        
+                        return (
+                          <tr key={feature} className="border-b">
+                            <td className="p-4">{feature}</td>
+                            <td className="text-center p-4">
+                              {inEssential ? (
+                                <Check className="h-5 w-5 text-green-500 mx-auto" />
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="text-center p-4">
+                              {inPro ? (
+                                <Check className="h-5 w-5 text-green-500 mx-auto" />
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  onClick={() => handleSubscribe(plan.id)}
-                  disabled={loading[plan.id]}
-                  variant={plan.name === 'Pro' ? 'default' : 'outline'}
-                >
-                  {loading[plan.id] ? 'Aguarde...' : <><CreditCard className="h-4 w-4 mr-2" />Assinar Plano</>}
-                </Button>
-              </CardFooter>
             </Card>
-          ))}
+          </div>
+        </div>
+
+        {/* FAQ */}
+        <div className="mt-16 max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8">Perguntas Frequentes</h2>
+          <div className="space-y-4">
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">Posso cancelar a qualquer momento?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Sim, você pode cancelar sua assinatura a qualquer momento. Você continuará tendo acesso 
+                  até o final do período pago.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">Como funciona o período de teste?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Você tem 7 dias para testar todas as funcionalidades gratuitamente. 
+                  Não é necessário cartão de crédito para começar.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2">Posso mudar de plano depois?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Sim, você pode fazer upgrade ou downgrade do seu plano a qualquer momento. 
+                  As mudanças entram em vigor no próximo ciclo de cobrança.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default SubscriptionPage;
+}
