@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,13 +20,48 @@ export default function Subscription() {
   const handleSubscribe = async (planId: string) => {
     setSelectedPlan(planId);
     
-    // Here you would integrate with Stripe
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A integração com pagamentos será implementada em breve.",
-    });
-    
-    setSelectedPlan(null);
+    try {
+      const plan = plans.find(p => p.id === planId);
+      if (!plan?.stripe_price_id) {
+        toast({
+          title: "Erro",
+          description: "Plano não configurado corretamente. Entre em contato com o suporte.",
+          variant: "destructive",
+        });
+        setSelectedPlan(null);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: { priceId: plan.stripe_price_id },
+      });
+
+      if (error) {
+        console.error('Error creating checkout session:', error);
+        toast({
+          title: "Erro ao processar pagamento",
+          description: error.message || "Não foi possível iniciar o processo de pagamento. Tente novamente.",
+          variant: "destructive",
+        });
+        setSelectedPlan(null);
+        return;
+      }
+
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error in handleSubscribe:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+      setSelectedPlan(null);
+    }
   };
 
   const formatPrice = (price: number) => {

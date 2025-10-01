@@ -11,6 +11,7 @@ interface SubscriptionPlan {
   max_users: number;
   trial_days: number;
   is_active: boolean;
+  stripe_price_id?: string;
 }
 
 interface UserSubscription {
@@ -61,7 +62,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         features: Array.isArray(plan.features) ? plan.features.filter((f): f is string => typeof f === 'string') : [],
         max_users: plan.max_users || 1,
         trial_days: plan.trial_days || 0,
-        is_active: plan.is_active || false
+        is_active: plan.is_active || false,
+        stripe_price_id: plan.stripe_price_id || undefined
       }));
       
       setPlans(typedPlans);

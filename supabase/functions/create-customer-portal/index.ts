@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Stripe from 'https://esm.sh/stripe@14.21.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,29 +80,15 @@ serve(async (req) => {
       );
     }
 
-    // Create Stripe customer portal session
-    const response = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${stripeSecretKey}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        'customer': profile.stripe_customer_id,
-        'return_url': `${req.headers.get('origin') || 'https://nexmart.lovable.app'}/settings`,
-      }),
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Stripe API error:', response.status, errorData);
-      return new Response(
-        JSON.stringify({ error: 'Failed to create customer portal session' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const session = await response.json();
+    // Create Stripe customer portal session using official library
+    const session = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: `${req.headers.get('origin') || 'https://nexmart.lovable.app'}/settings`,
+    });
 
     console.log('Customer portal session created successfully for user:', user.id);
     
