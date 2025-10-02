@@ -15,9 +15,11 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 import { produtosSample } from '@/data/mercadologico-data';
-
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const {
+    user,
+    signOut
+  } = useAuth();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
@@ -26,7 +28,6 @@ const Dashboard = () => {
     },
     kvi: 'todos'
   });
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -34,7 +35,6 @@ const Dashboard = () => {
       console.error('Erro ao fazer logout:', error);
     }
   };
-
   const handleRowClick = (produto: Produto) => {
     // Implement drill-down logic
     console.log('Produto clicado:', produto);
@@ -43,12 +43,11 @@ const Dashboard = () => {
 
   // Calculate KPIs from mock data
   const calculateKPIs = () => {
-    const totalRevenue = produtosSample.reduce((sum, p) => sum + (p.participacaoFaturamento * 1000), 0);
+    const totalRevenue = produtosSample.reduce((sum, p) => sum + p.participacaoFaturamento * 1000, 0);
     const avgMargin = produtosSample.reduce((sum, p) => sum + (p.margemAtual || 0), 0) / produtosSample.length;
     const avgBreakage = produtosSample.reduce((sum, p) => sum + (p.quebraAtual || 0), 0) / produtosSample.length;
     const kviProducts = produtosSample.filter(p => p.classificacaoKVI === 'Alta');
     const avgBrands = produtosSample.reduce((sum, p) => sum + (p.marcasAtuais || 0), 0) / produtosSample.length;
-
     return {
       faturamento: totalRevenue,
       margemBruta: avgMargin,
@@ -58,11 +57,8 @@ const Dashboard = () => {
       itensKVI: kviProducts.length
     };
   };
-
   const kpis = calculateKPIs();
-
-  return (
-    <AccessControl>
+  return <AccessControl>
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -71,7 +67,7 @@ const Dashboard = () => {
               <div className="flex items-center space-x-2">
                 <BarChart3 className="h-8 w-8 text-primary" />
                 <div>
-                  <span className="text-xl font-bold text-foreground">Dashboard</span>
+                  <span className="font-bold text-foreground text-2xl">Nexmart</span>
                   <Badge variant="outline" className="ml-2 text-xs">
                     Tempo Real
                   </Badge>
@@ -110,47 +106,27 @@ const Dashboard = () => {
 
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-            <KPICard
-              title="Faturamento"
-              value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`}
-              subtitle="Período selecionado"
-              trend={{ value: 8.2, isPositive: true }}
-              icon={DollarSign}
-            />
-            <KPICard
-              title="Margem Bruta"
-              value={`${kpis.margemBruta.toFixed(1)}%`}
-              subtitle="Meta: 18%"
-              trend={{ value: 2.1, isPositive: false }}
-              icon={TrendingUp}
-            />
-            <KPICard
-              title="Ruptura/Quebra"
-              value={`${kpis.ruptura.toFixed(1)}%`}
-              subtitle="Meta: <2%"
-              trend={{ value: 0.5, isPositive: false }}
-              icon={AlertTriangle}
-            />
-            <KPICard
-              title="Ticket Médio"
-              value={`R$ ${kpis.ticketMedio.toFixed(2)}`}
-              subtitle="Por transação"
-              trend={{ value: 5.3, isPositive: true }}
-              icon={ShoppingCart}
-            />
-            <KPICard
-              title="Mix de Marcas"
-              value={`${kpis.mixMarcas.toFixed(0)} marcas`}
-              subtitle="Média atual"
-              trend={{ value: 1.2, isPositive: true }}
-              icon={Package}
-            />
-            <KPICard
-              title="Itens KVI"
-              value={`${kpis.itensKVI}`}
-              subtitle={`${((kpis.itensKVI / produtosSample.length) * 100).toFixed(0)}% do portfólio`}
-              icon={Star}
-            />
+            <KPICard title="Faturamento" value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`} subtitle="Período selecionado" trend={{
+            value: 8.2,
+            isPositive: true
+          }} icon={DollarSign} />
+            <KPICard title="Margem Bruta" value={`${kpis.margemBruta.toFixed(1)}%`} subtitle="Meta: 18%" trend={{
+            value: 2.1,
+            isPositive: false
+          }} icon={TrendingUp} />
+            <KPICard title="Ruptura/Quebra" value={`${kpis.ruptura.toFixed(1)}%`} subtitle="Meta: <2%" trend={{
+            value: 0.5,
+            isPositive: false
+          }} icon={AlertTriangle} />
+            <KPICard title="Ticket Médio" value={`R$ ${kpis.ticketMedio.toFixed(2)}`} subtitle="Por transação" trend={{
+            value: 5.3,
+            isPositive: true
+          }} icon={ShoppingCart} />
+            <KPICard title="Mix de Marcas" value={`${kpis.mixMarcas.toFixed(0)} marcas`} subtitle="Média atual" trend={{
+            value: 1.2,
+            isPositive: true
+          }} icon={Package} />
+            <KPICard title="Itens KVI" value={`${kpis.itensKVI}`} subtitle={`${(kpis.itensKVI / produtosSample.length * 100).toFixed(0)}% do portfólio`} icon={Star} />
           </div>
 
           {/* Charts Section */}
@@ -174,8 +150,6 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
-    </AccessControl>
-  );
+    </AccessControl>;
 };
-
 export default Dashboard;
