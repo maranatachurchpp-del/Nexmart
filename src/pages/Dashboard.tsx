@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { AccessControl, TrialWarning } from '@/components/AccessControl';
 import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, LogOut, User, Settings, Upload, TrendingUp, DollarSign, AlertTriangle, ShoppingCart, Package, Star } from 'lucide-react';
+import { BarChart3, LogOut, User, Settings, Upload, TrendingUp, DollarSign, AlertTriangle, ShoppingCart, Package, Star, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
@@ -13,6 +14,7 @@ import { MarginChart } from '@/components/dashboard/MarginChart';
 import { TimeSeriesChart } from '@/components/dashboard/TimeSeriesChart';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
+import SmartAlertsPanel from '@/components/dashboard/SmartAlertsPanel';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 import { produtosSample } from '@/data/mercadologico-data';
 const Dashboard = () => {
@@ -20,6 +22,7 @@ const Dashboard = () => {
     user,
     signOut
   } = useAuth();
+  const { isAdmin } = useUserRoles();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
@@ -87,6 +90,12 @@ const Dashboard = () => {
                   <Settings className="w-4 h-4 mr-2" />
                   Configurações
                 </Button>
+                {isAdmin && (
+                  <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair
@@ -137,6 +146,11 @@ const Dashboard = () => {
 
           <div className="mb-6">
             <TimeSeriesChart />
+          </div>
+
+          {/* Smart AI Alerts */}
+          <div className="mb-6">
+            <SmartAlertsPanel />
           </div>
 
           {/* Data Table and Alerts */}

@@ -70,7 +70,7 @@ export default function Admin() {
     try {
       setLoading(true);
       
-      // Fetch stats
+      // Fetch all subscriptions with plan details
       const { data: subscriptions, error: subsError } = await supabase
         .from('subscriptions')
         .select(`
@@ -80,36 +80,51 @@ export default function Admin() {
 
       if (subsError) throw subsError;
 
-      // Calculate stats
+      // Calculate real stats
       const activeSubscriptions = subscriptions?.filter(s => s.status === 'active') || [];
       const trialUsers = subscriptions?.filter(s => s.status === 'trialing') || [];
       const mrr = activeSubscriptions.reduce((sum, sub) => {
         return sum + (sub.plan?.price_monthly || 0);
       }, 0);
 
-      // Mock data for demonstration
       setStats({
         totalUsers: subscriptions?.length || 0,
         activeSubscriptions: activeSubscriptions.length,
         trialUsers: trialUsers.length,
         mrr,
-        churnRate: 5.2 // Mock churn rate
+        churnRate: 0 // Calculate based on historical data if available
       });
 
-      // Fetch users (mock data since we can't access auth.users directly)
-      const mockUsers: UserData[] = Array.from({ length: 10 }, (_, i) => ({
-        id: `user-${i + 1}`,
-        email: `user${i + 1}@example.com`,
-        created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        subscription: Math.random() > 0.3 ? {
-          status: Math.random() > 0.7 ? 'trialing' : 'active',
-          plan_name: Math.random() > 0.5 ? 'Pro' : 'Essencial',
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          trial_end: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        } : undefined
-      }));
+      // Fetch real user profiles with subscriptions
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select(`
+          user_id,
+          name,
+          created_at
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      setUsers(mockUsers);
+      if (profilesError) throw profilesError;
+
+      // Map profiles to users with subscription data
+      const usersWithSubs: UserData[] = (profiles || []).map(profile => {
+        const userSub = subscriptions?.find(s => s.user_id === profile.user_id);
+        return {
+          id: profile.user_id,
+          email: profile.name || 'Sem nome',
+          created_at: profile.created_at,
+          subscription: userSub ? {
+            status: userSub.status,
+            plan_name: userSub.plan?.name || 'Desconhecido',
+            current_period_end: userSub.current_period_end || '',
+            trial_end: userSub.trial_end || ''
+          } : undefined
+        };
+      });
+
+      setUsers(usersWithSubs);
     } catch (error) {
       console.error('Error fetching admin data:', error);
     } finally {
