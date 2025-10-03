@@ -155,10 +155,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (plans.length > 0) {
+    if (user && plans.length > 0) {
       fetchSubscription();
+    } else if (!user) {
+      setSubscription(null);
+      setLoading(false);
     }
-  }, [user, plans]);
+  }, [user, plans.length]);
 
   const hasAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
   const isTrialing = subscription?.status === 'trialing';

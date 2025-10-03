@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,15 +53,27 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Get request body
-    const { priceId } = await req.json();
-    
-    if (!priceId) {
+    // Validate request body
+    const checkoutSchema = z.object({
+      priceId: z.string().min(1).max(100).regex(/^price_[a-zA-Z0-9_]+$/, 'Invalid Stripe price ID format')
+    });
+
+    let requestBody;
+    try {
+      const rawBody = await req.json();
+      requestBody = checkoutSchema.parse(rawBody);
+    } catch (error) {
+      console.error('Validation error:', error);
       return new Response(
-        JSON.stringify({ error: 'Price ID is required' }),
+        JSON.stringify({ 
+          error: 'Invalid request data',
+          details: error instanceof z.ZodError ? error.errors : 'Invalid price ID format'
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { priceId } = requestBody;
 
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
