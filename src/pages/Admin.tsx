@@ -71,9 +71,9 @@ export default function Admin() {
     try {
       setLoading(true);
       
-      // Fetch all subscriptions with plan details
+      // Fetch all subscriptions with plan details (use secure view)
       const { data: subscriptions, error: subsError } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select(`
           *,
           plan:subscription_plans(name, price_monthly)

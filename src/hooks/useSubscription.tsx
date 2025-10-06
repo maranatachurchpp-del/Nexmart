@@ -80,8 +80,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Use secure view that excludes sensitive Stripe IDs
       const { data, error } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select(`
           *,
           plan:subscription_plans(*)

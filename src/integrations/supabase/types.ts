@@ -53,6 +53,13 @@ export type Database = {
             referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payment_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "user_subscriptions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -67,7 +74,6 @@ export type Database = {
           name: string | null
           onboarding_completed: boolean | null
           store_count: string | null
-          stripe_customer_id: string | null
           updated_at: string
           user_id: string
         }
@@ -82,7 +88,6 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           store_count?: string | null
-          stripe_customer_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -97,7 +102,6 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           store_count?: string | null
-          stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -224,7 +228,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string | null
+          plan_id: string | null
+          status: string | null
+          trial_end: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string | null
+          plan_id?: string | null
+          status?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string | null
+          plan_id?: string | null
+          status?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_current_user_roles: {

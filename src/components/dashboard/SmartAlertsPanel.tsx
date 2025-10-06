@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, TrendingUp, AlertCircle, Lightbulb, Loader2, RefreshCw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertTriangle, TrendingUp, AlertCircle, Lightbulb, Loader2, RefreshCw, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -110,33 +111,51 @@ export default function SmartAlertsPanel() {
   }
 
   return (
-    <Card className="col-span-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-primary" />
-              Alertas Inteligentes (IA)
-            </CardTitle>
-            <CardDescription>
-              Insights gerados por IA Gemini • Atualizado agora
-            </CardDescription>
+    <TooltipProvider>
+      <Card className="col-span-full">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5 text-primary" />
+                  Alertas Inteligentes (IA)
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Alertas gerados por IA analisando seus dados de negócio em tempo real para identificar oportunidades e problemas críticos.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
+                <CardDescription>
+                  Insights gerados por IA Gemini • Atualizado agora
+                </CardDescription>
+              </div>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchAlerts(true)}
+                  disabled={refreshing}
+                >
+                  {refreshing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  <span className="ml-2">Atualizar</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Gerar novos insights com base nos dados mais recentes</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchAlerts(true)}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            <span className="ml-2">Atualizar</span>
-          </Button>
-        </div>
-      </CardHeader>
+        </CardHeader>
       <CardContent>
         {alerts.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -185,5 +204,6 @@ export default function SmartAlertsPanel() {
         )}
       </CardContent>
     </Card>
+    </TooltipProvider>
   );
 }

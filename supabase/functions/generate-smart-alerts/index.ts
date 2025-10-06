@@ -1,11 +1,17 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  forceRefresh: z.boolean().optional()
+}).optional();
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,6 +26,20 @@ serve(async (req) => {
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Validate request body if present
+    if (req.body) {
+      try {
+        const body = await req.json();
+        requestSchema.parse(body);
+      } catch (validationError) {
+        console.error('Validation error:', validationError);
+        return new Response(
+          JSON.stringify({ error: 'Invalid request format', details: String(validationError) }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const supabaseClient = createClient(

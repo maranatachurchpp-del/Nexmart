@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ArrowLeft, Check, Loader2, HelpCircle, Shield } from 'lucide-react';
 
 
 export default function Subscription() {
@@ -70,8 +71,9 @@ export default function Subscription() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <TooltipProvider>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto py-8 px-4 max-w-6xl">
         <div className="flex items-center gap-4 mb-8">
           <Button
             variant="ghost"
@@ -154,15 +156,24 @@ export default function Subscription() {
           })}
         </div>
 
-        <div className="mt-12 text-center text-sm text-muted-foreground">
+        <div className="mt-12 text-center text-sm text-muted-foreground space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <Shield className="h-4 w-4 text-primary" />
+            <p>Todos os pagamentos são processados de forma segura pelo Stripe.</p>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <HelpCircle className="h-4 w-4 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Seus dados de pagamento são processados pelo Stripe, líder mundial em segurança de pagamentos online. Não armazenamos informações de cartão.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <p>
-            Todos os pagamentos são processados de forma segura pelo Stripe.
-          </p>
-          <p className="mt-2">
             Você pode cancelar ou alterar seu plano a qualquer momento nas{' '}
             <button
               onClick={() => navigate('/settings')}
-              className="text-primary hover:underline"
+              className="text-primary hover:underline font-medium"
             >
               configurações
             </button>
@@ -171,5 +182,6 @@ export default function Subscription() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }
