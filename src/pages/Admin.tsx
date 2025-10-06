@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { WebhookStatus } from '@/components/admin/WebhookStatus';
 
 interface AdminStats {
   totalUsers: number;
@@ -257,6 +258,7 @@ export default function Admin() {
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList>
             <TabsTrigger value="users">Gestão de Usuários</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks Stripe</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -311,6 +313,10 @@ export default function Admin() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="webhooks" className="space-y-6">
+            <WebhookStatus />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
