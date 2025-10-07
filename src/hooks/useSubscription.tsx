@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from './useAuth';
+import { useUserRoles } from './useUserRoles';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionPlan {
@@ -40,6 +41,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { isAdmin } = useUserRoles();
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,7 +166,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [user, plans.length]);
 
-  const hasAccess = subscription?.status === 'active' || subscription?.status === 'trialing';
+  // Admins have full access regardless of subscription status
+  const hasAccess = isAdmin || subscription?.status === 'active' || subscription?.status === 'trialing';
   const isTrialing = subscription?.status === 'trialing';
   
   const trialDaysLeft = subscription?.trial_end 
