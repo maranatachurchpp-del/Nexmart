@@ -29,9 +29,12 @@ serve(async (req) => {
     }
 
     // Validate request body if present
-    if (req.body) {
+    let body = {};
+    const contentLength = req.headers.get('content-length');
+    
+    if (contentLength && parseInt(contentLength) > 0) {
       try {
-        const body = await req.json();
+        body = await req.json();
         requestSchema.parse(body);
       } catch (validationError) {
         console.error('Validation error:', validationError);
