@@ -65,40 +65,40 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
+          <div className="container mx-auto px-4 py-3 md:py-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
               <div className="flex items-center space-x-2">
-                <BarChart3 className="h-8 w-8 text-primary" />
-                <div>
-                  <span className="font-bold text-foreground text-2xl">Nexmart</span>
-                  <Badge variant="outline" className="ml-2 text-xs">
+                <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-foreground text-xl md:text-2xl">Nexmart</span>
+                  <Badge variant="outline" className="text-xs">
                     Tempo Real
                   </Badge>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
                   <User className="w-4 h-4" />
-                  <span>{user?.email}</span>
+                  <span className="truncate max-w-[150px] md:max-w-none">{user?.email}</span>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="hidden md:flex">
                   <Upload className="w-4 h-4 mr-2" />
                   Importar CSV
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configurações
+                  <Settings className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Configurações</span>
                 </Button>
                 {isAdmin && (
                   <Button variant="outline" size="sm" onClick={() => navigate('/admin')}>
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin
+                    <Shield className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Admin</span>
                   </Button>
                 )}
                 <Button variant="outline" size="sm" onClick={handleLogout}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sair
+                  <LogOut className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Sair</span>
                 </Button>
               </div>
             </div>
@@ -114,51 +114,77 @@ const Dashboard = () => {
           <FilterBar filters={filters} onFiltersChange={setFilters} />
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-            <KPICard title="Faturamento" value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`} subtitle="Período selecionado" trend={{
-            value: 8.2,
-            isPositive: true
-          }} icon={DollarSign} />
-            <KPICard title="Margem Bruta" value={`${kpis.margemBruta.toFixed(1)}%`} subtitle="Meta: 18%" trend={{
-            value: 2.1,
-            isPositive: false
-          }} icon={TrendingUp} />
-            <KPICard title="Ruptura/Quebra" value={`${kpis.ruptura.toFixed(1)}%`} subtitle="Meta: <2%" trend={{
-            value: 0.5,
-            isPositive: false
-          }} icon={AlertTriangle} />
-            <KPICard title="Ticket Médio" value={`R$ ${kpis.ticketMedio.toFixed(2)}`} subtitle="Por transação" trend={{
-            value: 5.3,
-            isPositive: true
-          }} icon={ShoppingCart} />
-            <KPICard title="Mix de Marcas" value={`${kpis.mixMarcas.toFixed(0)} marcas`} subtitle="Média atual" trend={{
-            value: 1.2,
-            isPositive: true
-          }} icon={Package} />
-            <KPICard title="Itens KVI" value={`${kpis.itensKVI}`} subtitle={`${(kpis.itensKVI / produtosSample.length * 100).toFixed(0)}% do portfólio`} icon={Star} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+            <KPICard 
+              title="Faturamento" 
+              value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`} 
+              subtitle="Período selecionado" 
+              trend={{ value: 8.2, isPositive: true }} 
+              icon={DollarSign}
+              tooltip="Receita total gerada no período selecionado"
+            />
+            <KPICard 
+              title="Margem Bruta" 
+              value={`${kpis.margemBruta.toFixed(1)}%`} 
+              subtitle="Meta: 18%" 
+              trend={{ value: 2.1, isPositive: false }} 
+              icon={TrendingUp}
+              tooltip="Percentual de lucro bruto sobre as vendas. Meta ideal: acima de 18%"
+            />
+            <KPICard 
+              title="Ruptura/Quebra" 
+              value={`${kpis.ruptura.toFixed(1)}%`} 
+              subtitle="Meta: <2%" 
+              trend={{ value: 0.5, isPositive: false }} 
+              icon={AlertTriangle}
+              tooltip="Produtos fora de estoque ou com perdas. Objetivo: manter abaixo de 2%"
+            />
+            <KPICard 
+              title="Ticket Médio" 
+              value={`R$ ${kpis.ticketMedio.toFixed(2)}`} 
+              subtitle="Por transação" 
+              trend={{ value: 5.3, isPositive: true }} 
+              icon={ShoppingCart}
+              tooltip="Valor médio gasto por cliente em cada compra"
+            />
+            <KPICard 
+              title="Mix de Marcas" 
+              value={`${kpis.mixMarcas.toFixed(0)} marcas`} 
+              subtitle="Média atual" 
+              trend={{ value: 1.2, isPositive: true }} 
+              icon={Package}
+              tooltip="Quantidade média de marcas diferentes por categoria de produto"
+            />
+            <KPICard 
+              title="Itens KVI" 
+              value={`${kpis.itensKVI}`} 
+              subtitle={`${(kpis.itensKVI / produtosSample.length * 100).toFixed(0)}% do portfólio`} 
+              icon={Star}
+              tooltip="Key Value Items - Produtos-chave que mais impactam a percepção de preço do consumidor"
+            />
           </div>
 
           {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
             <RevenueChart />
             <MarginChart />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <TimeSeriesChart />
           </div>
 
           {/* Smart AI Alerts */}
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <SmartAlertsPanel />
           </div>
 
           {/* Data Table and Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="lg:col-span-2 overflow-x-auto">
               <DataTable onRowClick={handleRowClick} />
             </div>
-            <div>
+            <div className="lg:col-span-1">
               <AlertsPanel />
             </div>
           </div>

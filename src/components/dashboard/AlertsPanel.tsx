@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, TrendingDown, Package, Star } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertTriangle, TrendingDown, Package, Star, HelpCircle } from 'lucide-react';
 import { produtosSample } from '@/data/mercadologico-data';
 
 export const AlertsPanel = () => {
@@ -111,60 +112,75 @@ export const AlertsPanel = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center">
-          <AlertTriangle className="w-5 h-5 mr-2" />
-          Alertas & Insights
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {alerts.length} alertas que necessitam atenção
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {alerts.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <AlertTriangle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>Nenhum alerta no momento</p>
-            <p className="text-xs">Todos os indicadores estão dentro dos parâmetros</p>
+    <TooltipProvider>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Alertas & Insights
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Alertas automáticos baseados nos seus dados de produtos, margens e performance</p>
+                </TooltipContent>
+              </Tooltip>
+            </CardTitle>
           </div>
-        ) : (
-          alerts.map((alert) => {
-            const IconComponent = alert.icon;
-            return (
-              <div
-                key={alert.id}
-                className={`p-4 rounded-lg border transition-colors hover:bg-muted/20 ${getSeverityBg(alert.severidade)}`}
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="flex-shrink-0">
-                    <IconComponent className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-sm font-medium text-foreground">
-                        {alert.titulo}
-                      </h4>
-                      <Badge variant={getSeverityColor(alert.severidade)} className="text-xs">
-                        {alert.severidade === 'destructive' ? 'Crítico' : 
-                         alert.severidade === 'warning' ? 'Atenção' : 'OK'}
-                      </Badge>
+          <p className="text-sm text-muted-foreground">
+            {alerts.length} {alerts.length === 1 ? 'alerta necessita' : 'alertas necessitam'} atenção
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {alerts.length === 0 ? (
+            <div className="text-center py-8 space-y-2">
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto">
+                <AlertTriangle className="w-6 h-6 text-success" />
+              </div>
+              <p className="font-medium text-foreground">Tudo sob controle!</p>
+              <p className="text-sm text-muted-foreground">Nenhum alerta no momento</p>
+              <p className="text-xs text-muted-foreground">Todos os indicadores estão dentro dos parâmetros</p>
+            </div>
+          ) : (
+            alerts.map((alert) => {
+              const IconComponent = alert.icon;
+              return (
+                <div
+                  key={alert.id}
+                  className={`p-3 md:p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${getSeverityBg(alert.severidade)}`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      {alert.mensagem}
-                    </p>
-                    {alert.detalhes && (
-                      <p className="text-xs text-muted-foreground">
-                        {alert.detalhes}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <h4 className="text-sm font-medium text-foreground truncate">
+                          {alert.titulo}
+                        </h4>
+                        <Badge variant={getSeverityColor(alert.severidade)} className="text-xs shrink-0">
+                          {alert.severidade === 'destructive' ? 'Crítico' : 
+                           alert.severidade === 'warning' ? 'Atenção' : 'OK'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {alert.mensagem}
                       </p>
-                    )}
+                      {alert.detalhes && (
+                        <p className="text-xs text-muted-foreground/80">
+                          {alert.detalhes}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-      </CardContent>
-    </Card>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 };

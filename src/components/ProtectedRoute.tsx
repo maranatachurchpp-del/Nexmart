@@ -11,10 +11,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verificando autenticação...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/20 rounded-full animate-pulse mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-lg font-medium text-foreground">Autenticando</p>
+            <p className="text-sm text-muted-foreground">Verificando suas credenciais...</p>
+          </div>
         </div>
       </div>
     );

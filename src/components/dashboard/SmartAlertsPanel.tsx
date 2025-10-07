@@ -55,9 +55,10 @@ export default function SmartAlertsPanel() {
 
       if (error) {
         console.error('Error fetching alerts:', error);
+        const errorMessage = error.message || 'Não foi possível conectar ao servidor';
         toast({
-          title: 'Erro ao gerar alertas',
-          description: error.message || 'Tente novamente mais tarde',
+          title: '❌ Erro ao carregar alertas inteligentes',
+          description: `${errorMessage}. Por favor, verifique sua conexão e tente novamente.`,
           variant: 'destructive',
         });
         return;
@@ -67,16 +68,17 @@ export default function SmartAlertsPanel() {
         setAlerts(data.alerts);
         if (isRefresh) {
           toast({
-            title: 'Alertas atualizados',
-            description: `${data.alerts.length} novos insights gerados pela IA`,
+            title: '✅ Alertas atualizados com sucesso',
+            description: `${data.alerts.length} insight${data.alerts.length !== 1 ? 's' : ''} gerado${data.alerts.length !== 1 ? 's' : ''} pela IA Gemini`,
           });
         }
       }
     } catch (error) {
       console.error('Error in fetchAlerts:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
-        title: 'Erro ao carregar alertas',
-        description: 'Ocorreu um erro inesperado',
+        title: '⚠️ Erro inesperado ao carregar alertas',
+        description: `Detalhes: ${errorMsg}. Nossa equipe foi notificada. Por favor, tente novamente em alguns instantes.`,
         variant: 'destructive',
       });
     } finally {
@@ -102,8 +104,9 @@ export default function SmartAlertsPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground animate-pulse">Analisando seus dados e gerando insights personalizados...</p>
           </div>
         </CardContent>
       </Card>
@@ -158,11 +161,13 @@ export default function SmartAlertsPanel() {
         </CardHeader>
       <CardContent>
         {alerts.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            Nenhum alerta disponível no momento
+          <div className="text-center py-12 space-y-3">
+            <Lightbulb className="h-12 w-12 text-muted-foreground/50 mx-auto" />
+            <p className="text-muted-foreground font-medium">Nenhum alerta disponível no momento</p>
+            <p className="text-sm text-muted-foreground">Os alertas são gerados automaticamente com base na análise dos seus dados</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
             {alerts.map((alert) => {
               const Icon = categoryIcons[alert.category];
               const priorityInfo = priorityConfig[alert.priority];
