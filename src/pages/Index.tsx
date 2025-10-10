@@ -3,46 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Shield, 
-  Zap, 
-  CheckCircle, 
-  Star,
-  Menu,
-  ArrowRight,
-  PieChart,
-  Target,
-  Users,
-  Building2,
-  Sparkles,
-  Brain,
-  ChartBar,
-  Globe,
-  Database,
-  FileText,
-  Upload,
-  DollarSign,
-  Clock,
-  Award,
-  Quote
-} from "lucide-react";
+import { BarChart3, TrendingUp, Shield, Zap, CheckCircle, Star, Menu, ArrowRight, PieChart, Target, Users, Building2, Sparkles, Brain, ChartBar, Globe, Database, FileText, Upload, DollarSign, Clock, Award, Quote } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
 const Index = () => {
   const [email, setEmail] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implementar captura de lead
     console.log("Email capturado:", email);
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Header Fixo */}
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -71,19 +43,13 @@ const Index = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
+            <Button variant="ghost" size="sm" className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <Menu className="h-5 w-5" />
             </Button>
           </nav>
 
           {/* Mobile Menu */}
-          {isMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 border-t border-border pt-4 animate-fade-in">
+          {isMenuOpen && <div className="md:hidden mt-4 pb-4 border-t border-border pt-4 animate-fade-in">
               <div className="flex flex-col space-y-4">
                 <a href="#inicio" className="text-muted-foreground hover:text-primary transition-colors font-medium">Home</a>
                 <a href="#solucao" className="text-muted-foreground hover:text-primary transition-colors font-medium">Solução</a>
@@ -98,8 +64,7 @@ const Index = () => {
                   </Button>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </header>
 
@@ -109,7 +74,9 @@ const Index = () => {
           {/* Background elements */}
           <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-success/10"></div>
           <div className="absolute top-10 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-10 left-10 w-96 h-96 bg-success/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+          <div className="absolute bottom-10 left-10 w-96 h-96 bg-success/10 rounded-full blur-3xl animate-pulse" style={{
+          animationDelay: '2s'
+        }}></div>
           
           <div className="relative container mx-auto px-4 text-center">
             <div className="mb-8 animate-fade-in">
@@ -119,34 +86,29 @@ const Index = () => {
               </Badge>
             </div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-8 leading-tight tracking-tight animate-fade-in" style={{animationDelay: '0.2s'}}>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-8 leading-tight tracking-tight animate-fade-in" style={{
+            animationDelay: '0.2s'
+          }}>
               Nexmart: O Próximo Nível da<br />
               <span className="bg-gradient-to-r from-primary via-success to-primary bg-clip-text text-transparent">
                 Gestão Mercadológica
               </span>
             </h1>
             
-            <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in" style={{animationDelay: '0.4s'}}>
+            <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in" style={{
+            animationDelay: '0.4s'
+          }}>
               Organize sua estrutura, otimize suas margens e impulsione o lucro do seu supermercado<br />
               com <strong className="text-foreground">inteligência e simplicidade</strong>.
             </p>
 
             {/* CTA Principal */}
-            <div className="max-w-lg mx-auto mb-16 animate-fade-in" style={{animationDelay: '0.6s'}}>
+            <div className="max-w-lg mx-auto mb-16 animate-fade-in" style={{
+            animationDelay: '0.6s'
+          }}>
               <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Input
-                  type="email"
-                  placeholder="seu-email@supermercado.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-14 text-lg bg-card/80 backdrop-blur-sm border-2 border-border focus:border-primary transition-all"
-                  required
-                />
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-success hover:opacity-90 shadow-xl hover-scale"
-                >
+                <Input type="email" placeholder="seu-email@supermercado.com" value={email} onChange={e => setEmail(e.target.value)} className="h-14 text-lg bg-card/80 backdrop-blur-sm border-2 border-border focus:border-primary transition-all" required />
+                <Button type="submit" size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-success hover:opacity-90 shadow-xl hover-scale">
                   Experimente Grátis por 7 Dias
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -169,10 +131,12 @@ const Index = () => {
             </div>
 
             {/* Social Proof */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-in" style={{animationDelay: '0.8s'}}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-in" style={{
+            animationDelay: '0.8s'
+          }}>
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">1000+</div>
-                <div className="text-sm text-muted-foreground">Supermercados ativos</div>
+                <div className="text-sm text-muted-foreground">Supermercados</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">25%</div>
@@ -452,9 +416,7 @@ const Index = () => {
               <Card className="hover:shadow-xl transition-all duration-300 hover-scale">
                 <CardHeader>
                   <div className="flex items-center space-x-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-warning text-warning" />
-                    ))}
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-warning text-warning" />)}
                   </div>
                   <Quote className="w-8 h-8 text-muted-foreground mb-4" />
                 </CardHeader>
@@ -477,9 +439,7 @@ const Index = () => {
               <Card className="hover:shadow-xl transition-all duration-300 hover-scale">
                 <CardHeader>
                   <div className="flex items-center space-x-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-warning text-warning" />
-                    ))}
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-warning text-warning" />)}
                   </div>
                   <Quote className="w-8 h-8 text-muted-foreground mb-4" />
                 </CardHeader>
@@ -502,9 +462,7 @@ const Index = () => {
               <Card className="hover:shadow-xl transition-all duration-300 hover-scale">
                 <CardHeader>
                   <div className="flex items-center space-x-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-warning text-warning" />
-                    ))}
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-warning text-warning" />)}
                   </div>
                   <Quote className="w-8 h-8 text-muted-foreground mb-4" />
                 </CardHeader>
@@ -679,8 +637,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
