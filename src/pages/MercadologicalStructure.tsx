@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { TreeView } from '@/components/structure/TreeView';
 import { DetailPanel } from '@/components/structure/DetailPanel';
 import { ItemEditor } from '@/components/structure/ItemEditor';
+import { CSVUploadDialog } from '@/components/structure/CSVUploadDialog';
 import { produtosSample } from '@/data/mercadologico-data';
 import { Produto } from '@/types/mercadologico';
 
@@ -15,6 +16,7 @@ export default function MercadologicalStructure() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [produtos, setProdutos] = useState<Produto[]>(produtosSample);
+  const [showCSVUpload, setShowCSVUpload] = useState(false);
 
   // Organize data into hierarchy
   const hierarchy = useMemo(() => {
@@ -198,7 +200,7 @@ export default function MercadologicalStructure() {
               <Download className="w-4 h-4" />
               Exportar CSV
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" onClick={() => setShowCSVUpload(true)} className="gap-2">
               <Upload className="w-4 h-4" />
               Importar CSV
             </Button>
@@ -271,6 +273,16 @@ export default function MercadologicalStructure() {
           onCancel={() => setEditingItem(null)}
         />
       )}
+
+      {/* CSV Upload Dialog */}
+      <CSVUploadDialog
+        open={showCSVUpload}
+        onOpenChange={setShowCSVUpload}
+        onSuccess={() => {
+          // Reload products after import
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }
