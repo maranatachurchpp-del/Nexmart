@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      produtos: {
+        Row: {
+          categoria: string
+          classificacao_kvi:
+            | Database["public"]["Enums"]["classificacao_kvi"]
+            | null
+          codigo: string
+          created_at: string | null
+          departamento: string
+          descricao: string
+          giro_ideal_mes: number | null
+          id: string
+          marcas_atuais: number | null
+          marcas_max: number | null
+          marcas_min: number | null
+          margem_a_max: number | null
+          margem_a_min: number | null
+          participacao_faturamento: number | null
+          preco_medio_max: number | null
+          preco_medio_min: number | null
+          quebra_atual: number | null
+          quebra_esperada: number | null
+          status: Database["public"]["Enums"]["status_produto"] | null
+          subcategoria: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          categoria: string
+          classificacao_kvi?:
+            | Database["public"]["Enums"]["classificacao_kvi"]
+            | null
+          codigo: string
+          created_at?: string | null
+          departamento: string
+          descricao: string
+          giro_ideal_mes?: number | null
+          id?: string
+          marcas_atuais?: number | null
+          marcas_max?: number | null
+          marcas_min?: number | null
+          margem_a_max?: number | null
+          margem_a_min?: number | null
+          participacao_faturamento?: number | null
+          preco_medio_max?: number | null
+          preco_medio_min?: number | null
+          quebra_atual?: number | null
+          quebra_esperada?: number | null
+          status?: Database["public"]["Enums"]["status_produto"] | null
+          subcategoria: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          classificacao_kvi?:
+            | Database["public"]["Enums"]["classificacao_kvi"]
+            | null
+          codigo?: string
+          created_at?: string | null
+          departamento?: string
+          descricao?: string
+          giro_ideal_mes?: number | null
+          id?: string
+          marcas_atuais?: number | null
+          marcas_max?: number | null
+          marcas_min?: number | null
+          margem_a_max?: number | null
+          margem_a_min?: number | null
+          participacao_faturamento?: number | null
+          preco_medio_max?: number | null
+          preco_medio_min?: number | null
+          quebra_atual?: number | null
+          quebra_esperada?: number | null
+          status?: Database["public"]["Enums"]["status_produto"] | null
+          subcategoria?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -40,6 +121,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_sample_produtos: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       get_current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
@@ -54,6 +139,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "moderator"
+      classificacao_kvi: "Alta" | "Média" | "Baixa"
+      status_produto: "success" | "warning" | "destructive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -182,6 +269,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "moderator"],
+      classificacao_kvi: ["Alta", "Média", "Baixa"],
+      status_produto: ["success", "warning", "destructive"],
     },
   },
 } as const
