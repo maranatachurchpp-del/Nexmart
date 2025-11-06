@@ -1,4 +1,5 @@
 export interface Produto {
+  id?: string;
   codigo: string;
   descricao: string;
   departamento: string;
@@ -6,8 +7,8 @@ export interface Produto {
   subcategoria: string;
   quebraEsperada: number;
   margemA: { min: number; max: number };
-  margemB: { min: number; max: number };
-  margemC: { min: number; max: number };
+  margemB?: { min: number; max: number };
+  margemC?: { min: number; max: number };
   marcasMin: number;
   marcasMax: number;
   giroIdealMes: number;

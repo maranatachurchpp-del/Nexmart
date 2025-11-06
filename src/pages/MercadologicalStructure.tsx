@@ -8,15 +8,15 @@ import { TreeView } from '@/components/structure/TreeView';
 import { DetailPanel } from '@/components/structure/DetailPanel';
 import { ItemEditor } from '@/components/structure/ItemEditor';
 import { CSVUploadDialog } from '@/components/structure/CSVUploadDialog';
-import { produtosSample } from '@/data/mercadologico-data';
+import { useProducts } from '@/hooks/useProducts';
 import { Produto } from '@/types/mercadologico';
 
 export default function MercadologicalStructure() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [produtos, setProdutos] = useState<Produto[]>(produtosSample);
   const [showCSVUpload, setShowCSVUpload] = useState(false);
+  const { produtos, isLoading, saveProduct, deleteProduct, refreshProducts } = useProducts();
 
   // Organize data into hierarchy
   const hierarchy = useMemo(() => {
@@ -115,23 +115,16 @@ export default function MercadologicalStructure() {
     setEditingItem(newItem);
   };
 
-  const handleSaveItem = (item: any) => {
+  const handleSaveItem = async (item: any) => {
     if (item.tipo === 'produto') {
-      setProdutos(prev => {
-        const existing = prev.find(p => p.codigo === item.codigo);
-        if (existing) {
-          return prev.map(p => p.codigo === item.codigo ? item : p);
-        } else {
-          return [...prev, item];
-        }
-      });
+      await saveProduct(item);
     }
     setEditingItem(null);
   };
 
-  const handleDeleteItem = (item: any) => {
-    if (item.tipo === 'produto') {
-      setProdutos(prev => prev.filter(p => p.codigo !== item.codigo));
+  const handleDeleteItem = async (item: any) => {
+    if (item.tipo === 'produto' && item.id) {
+      await deleteProduct(item.id);
     }
     setSelectedItem(null);
   };
@@ -178,6 +171,17 @@ export default function MercadologicalStructure() {
       criticalRate: Math.round((critical / total) * 100)
     };
   }, [produtos]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando produtos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -278,10 +282,7 @@ export default function MercadologicalStructure() {
       <CSVUploadDialog
         open={showCSVUpload}
         onOpenChange={setShowCSVUpload}
-        onSuccess={() => {
-          // Reload products after import
-          window.location.reload();
-        }}
+        onSuccess={refreshProducts}
       />
     </div>
   );
