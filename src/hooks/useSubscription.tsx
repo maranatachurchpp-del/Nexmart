@@ -47,8 +47,31 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchPlans = async () => {
-    // Subscription tables not yet implemented
-    setPlans([]);
+    try {
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('is_active', true)
+        .order('price_monthly', { ascending: true });
+
+      if (error) throw error;
+      
+      const typedPlans: SubscriptionPlan[] = (data || []).map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        description: plan.description || '',
+        price_monthly: Number(plan.price_monthly),
+        features: Array.isArray(plan.features) ? (plan.features as string[]) : [],
+        max_users: plan.max_users || 1,
+        trial_days: plan.trial_days || 0,
+        is_active: plan.is_active || false,
+        stripe_price_id: plan.stripe_price_id || undefined
+      }));
+      
+      setPlans(typedPlans);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+    }
   };
 
   const fetchSubscription = async () => {
@@ -58,14 +81,72 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Subscription tables not yet implemented - grant access to all authenticated users
-    setSubscription(null);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          plan:subscription_plans(*)
+        `)
+        .eq('user_id', user.id)
+        .in('status', ['trialing', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data && data.plan) {
+        setSubscription({
+          ...data,
+          plan: Array.isArray(data.plan) ? data.plan[0] : data.plan
+        } as UserSubscription);
+      } else {
+        await createTrialSubscription();
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createTrialSubscription = async () => {
-    // Subscription tables not yet implemented
-    return;
+    if (!user) return;
+
+    try {
+      const trialPlan = plans.find(p => p.name === 'Teste Gratuito');
+      if (!trialPlan) return;
+
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 7);
+
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: user.id,
+          plan_id: trialPlan.id,
+          status: 'trialing' as const,
+          trial_end: trialEnd.toISOString(),
+          current_period_end: trialEnd.toISOString()
+        })
+        .select(`
+          *,
+          plan:subscription_plans(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      
+      if (data && data.plan) {
+        setSubscription({
+          ...data,
+          plan: Array.isArray(data.plan) ? data.plan[0] : data.plan
+        } as UserSubscription);
+      }
+    } catch (error) {
+      console.error('Error creating trial subscription:', error);
+    }
   };
 
   const refreshSubscription = async () => {
@@ -85,10 +166,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, [user, plans.length]);
 
-  // Grant access to all authenticated users (subscription system not yet implemented)
-  const hasAccess = !!user || isAdmin;
-  const isTrialing = false;
-  const trialDaysLeft = 0;
+  // Admins have full access regardless of subscription status
+  const hasAccess = isAdmin || subscription?.status === 'active' || subscription?.status === 'trialing';
+  const isTrialing = subscription?.status === 'trialing';
+  
+  const trialDaysLeft = subscription?.trial_end 
+    ? Math.max(0, Math.ceil((new Date(subscription.trial_end).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   const checkFeatureAccess = (feature: string): boolean => {
     if (!subscription?.plan) return false;

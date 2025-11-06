@@ -64,10 +64,9 @@ export default function Settings() {
         setName(data.name || '');
         setCompanyName(data.company_name || '');
         setAnnualRevenue(data.annual_revenue || '');
-        setStoreCount(data.store_count || '');
+        setStoreCount(String(data.store_count || ''));
         setFocusAreas(data.focus_areas || []);
         setExperienceLevel(data.experience_level || '');
-        setMainObjective(data.main_objective || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -162,10 +161,9 @@ export default function Settings() {
         .update({
           company_name: companyName,
           annual_revenue: annualRevenue,
-          store_count: storeCount,
+          store_count: parseInt(storeCount) || 0,
           focus_areas: focusAreas,
           experience_level: experienceLevel,
-          main_objective: mainObjective,
         })
         .eq('user_id', user?.id);
 

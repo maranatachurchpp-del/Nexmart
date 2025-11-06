@@ -95,6 +95,87 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          annual_revenue: string | null
+          company_name: string | null
+          created_at: string | null
+          experience_level: string | null
+          focus_areas: string[] | null
+          id: string
+          name: string | null
+          store_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          annual_revenue?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          experience_level?: string | null
+          focus_areas?: string[] | null
+          id?: string
+          name?: string | null
+          store_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          annual_revenue?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          experience_level?: string | null
+          focus_areas?: string[] | null
+          id?: string
+          name?: string | null
+          store_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          max_users: number | null
+          name: string
+          price_monthly: number
+          stripe_price_id: string | null
+          trial_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_users?: number | null
+          name: string
+          price_monthly?: number
+          stripe_price_id?: string | null
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          max_users?: number | null
+          name?: string
+          price_monthly?: number
+          stripe_price_id?: string | null
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -115,6 +196,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string
+          status: string
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id: string
+          status?: string
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

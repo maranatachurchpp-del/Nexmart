@@ -69,17 +69,15 @@ const Onboarding = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .insert({
+        .insert([{
           user_id: user.id,
           name: data.name,
           company_name: data.companyName,
           annual_revenue: data.annualRevenue,
-          store_count: data.storeCount,
+          store_count: parseInt(String(data.storeCount)) || 0,
           focus_areas: data.focusAreas,
           experience_level: data.experienceLevel,
-          main_objective: data.mainObjective,
-          onboarding_completed: true
-        });
+        }]);
 
       if (error) throw error;
 
