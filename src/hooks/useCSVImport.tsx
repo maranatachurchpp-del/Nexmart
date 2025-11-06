@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
+import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -24,11 +25,53 @@ interface CSVRow {
   status?: 'success' | 'warning' | 'destructive';
 }
 
+export interface ValidationError {
+  row: number;
+  field: string;
+  message: string;
+  value?: any;
+}
+
+const csvRowSchema = z.object({
+  codigo: z.string().min(1, 'Código é obrigatório'),
+  descricao: z.string().min(1, 'Descrição é obrigatória'),
+  departamento: z.string().min(1, 'Departamento é obrigatório'),
+  categoria: z.string().min(1, 'Categoria é obrigatória'),
+  subcategoria: z.string().min(1, 'Subcategoria é obrigatória'),
+  quebra_esperada: z.number().min(0, 'Quebra esperada deve ser >= 0').optional(),
+  quebra_atual: z.number().min(0, 'Quebra atual deve ser >= 0').optional(),
+  margem_a_min: z.number().min(0, 'Margem mínima deve ser >= 0').optional(),
+  margem_a_max: z.number().min(0, 'Margem máxima deve ser >= 0').optional(),
+  marcas_min: z.number().int('Marcas mínimas deve ser um número inteiro').min(0, 'Marcas mínimas deve ser >= 0').optional(),
+  marcas_max: z.number().int('Marcas máximas deve ser um número inteiro').min(0, 'Marcas máximas deve ser >= 0').optional(),
+  marcas_atuais: z.number().int('Marcas atuais deve ser um número inteiro').min(0, 'Marcas atuais deve ser >= 0').optional(),
+  giro_ideal_mes: z.number().int('Giro ideal/mês deve ser um número inteiro').min(0, 'Giro ideal/mês deve ser >= 0').optional(),
+  participacao_faturamento: z.number().min(0, 'Participação deve ser >= 0').max(100, 'Participação deve ser <= 100').optional(),
+  preco_medio_min: z.number().min(0, 'Preço médio mínimo deve ser >= 0').optional(),
+  preco_medio_max: z.number().min(0, 'Preço médio máximo deve ser >= 0').optional(),
+  classificacao_kvi: z.enum(['Alta', 'Média', 'Baixa'], { 
+    errorMap: () => ({ message: 'Classificação KVI deve ser: Alta, Média ou Baixa' }) 
+  }).optional(),
+  status: z.enum(['success', 'warning', 'destructive'], { 
+    errorMap: () => ({ message: 'Status deve ser: success, warning ou destructive' }) 
+  }).optional(),
+}).refine(
+  (data) => !data.margem_a_max || !data.margem_a_min || data.margem_a_max >= data.margem_a_min,
+  { message: 'Margem máxima deve ser maior ou igual à margem mínima', path: ['margem_a_max'] }
+).refine(
+  (data) => !data.marcas_max || !data.marcas_min || data.marcas_max >= data.marcas_min,
+  { message: 'Marcas máximas devem ser maior ou igual às marcas mínimas', path: ['marcas_max'] }
+).refine(
+  (data) => !data.preco_medio_max || !data.preco_medio_min || data.preco_medio_max >= data.preco_medio_min,
+  { message: 'Preço médio máximo deve ser maior ou igual ao preço médio mínimo', path: ['preco_medio_max'] }
+);
+
 export const useCSVImport = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
   const [processedRows, setProcessedRows] = useState(0);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
   const parseCSV = (file: File): Promise<CSVRow[]> => {
     return new Promise((resolve, reject) => {
@@ -68,10 +111,46 @@ export const useCSVImport = () => {
     });
   };
 
+  const validateRow = (row: any, rowIndex: number): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    
+    // Convert string values to numbers where needed
+    const processedRow = {
+      ...row,
+      quebra_esperada: row.quebra_esperada ? parseFloat(String(row.quebra_esperada)) : undefined,
+      quebra_atual: row.quebra_atual ? parseFloat(String(row.quebra_atual)) : undefined,
+      margem_a_min: row.margem_a_min ? parseFloat(String(row.margem_a_min)) : undefined,
+      margem_a_max: row.margem_a_max ? parseFloat(String(row.margem_a_max)) : undefined,
+      marcas_min: row.marcas_min ? parseInt(String(row.marcas_min)) : undefined,
+      marcas_max: row.marcas_max ? parseInt(String(row.marcas_max)) : undefined,
+      marcas_atuais: row.marcas_atuais ? parseInt(String(row.marcas_atuais)) : undefined,
+      giro_ideal_mes: row.giro_ideal_mes ? parseInt(String(row.giro_ideal_mes)) : undefined,
+      participacao_faturamento: row.participacao_faturamento ? parseFloat(String(row.participacao_faturamento)) : undefined,
+      preco_medio_min: row.preco_medio_min ? parseFloat(String(row.preco_medio_min)) : undefined,
+      preco_medio_max: row.preco_medio_max ? parseFloat(String(row.preco_medio_max)) : undefined,
+    };
+
+    const result = csvRowSchema.safeParse(processedRow);
+    
+    if (!result.success) {
+      result.error.errors.forEach((error) => {
+        errors.push({
+          row: rowIndex + 1,
+          field: error.path.join('.'),
+          message: error.message,
+          value: error.path.length > 0 ? row[error.path[0]] : undefined,
+        });
+      });
+    }
+    
+    return errors;
+  };
+
   const importCSV = async (file: File) => {
     setIsImporting(true);
     setProgress(0);
     setProcessedRows(0);
+    setValidationErrors([]);
 
     try {
       // Parse CSV
@@ -80,6 +159,24 @@ export const useCSVImport = () => {
 
       if (rows.length === 0) {
         throw new Error('O arquivo CSV está vazio');
+      }
+
+      // Validate all rows first
+      const allErrors: ValidationError[] = [];
+      rows.forEach((row, index) => {
+        const rowErrors = validateRow(row, index);
+        allErrors.push(...rowErrors);
+      });
+
+      if (allErrors.length > 0) {
+        setValidationErrors(allErrors);
+        toast({
+          title: 'Erros de validação encontrados',
+          description: `${allErrors.length} erro(s) em ${new Set(allErrors.map(e => e.row)).size} linha(s). Verifique os detalhes abaixo.`,
+          variant: 'destructive',
+        });
+        setIsImporting(false);
+        return { success: false, errors: allErrors };
       }
 
       // Get current user
@@ -160,5 +257,6 @@ export const useCSVImport = () => {
     progress,
     totalRows,
     processedRows,
+    validationErrors,
   };
 };

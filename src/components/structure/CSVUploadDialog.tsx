@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useCSVImport } from '@/hooks/useCSVImport';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCSVImport, ValidationError } from '@/hooks/useCSVImport';
 
 interface CSVUploadDialogProps {
   open: boolean;
@@ -21,7 +22,7 @@ interface CSVUploadDialogProps {
 export const CSVUploadDialog = ({ open, onOpenChange, onSuccess }: CSVUploadDialogProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { importCSV, isImporting, progress, totalRows, processedRows } = useCSVImport();
+  const { importCSV, isImporting, progress, totalRows, processedRows, validationErrors } = useCSVImport();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,6 +58,17 @@ export const CSVUploadDialog = ({ open, onOpenChange, onSuccess }: CSVUploadDial
       }
       onOpenChange(false);
     }
+  };
+
+  const groupErrorsByRow = (errors: ValidationError[]) => {
+    const grouped = new Map<number, ValidationError[]>();
+    errors.forEach(error => {
+      if (!grouped.has(error.row)) {
+        grouped.set(error.row, []);
+      }
+      grouped.get(error.row)?.push(error);
+    });
+    return grouped;
   };
 
   return (
@@ -114,8 +126,49 @@ export const CSVUploadDialog = ({ open, onOpenChange, onSuccess }: CSVUploadDial
             </div>
           )}
 
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && !isImporting && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertTitle className="font-semibold mb-2">
+                Erros de Validação Encontrados
+              </AlertTitle>
+              <AlertDescription>
+                <p className="mb-3 text-sm">
+                  {validationErrors.length} erro(s) em {new Set(validationErrors.map(e => e.row)).size} linha(s). 
+                  Corrija os erros abaixo e tente novamente.
+                </p>
+                <ScrollArea className="h-[240px] w-full rounded-md border border-destructive/30 bg-background/50 p-3">
+                  <div className="space-y-3">
+                    {Array.from(groupErrorsByRow(validationErrors)).map(([rowNum, errors]) => (
+                      <div key={rowNum} className="space-y-1 pb-3 border-b border-border last:border-0">
+                        <p className="font-semibold text-sm text-foreground">Linha {rowNum}:</p>
+                        <ul className="space-y-1.5 ml-1">
+                          {errors.map((error, idx) => (
+                            <li key={idx} className="text-xs flex items-start gap-1.5">
+                              <span className="text-destructive mt-0.5">•</span>
+                              <div className="flex-1">
+                                <span className="font-medium text-foreground">{error.field}</span>
+                                <span className="text-muted-foreground">: {error.message}</span>
+                                {error.value !== undefined && error.value !== '' && (
+                                  <div className="text-muted-foreground italic mt-0.5">
+                                    Valor informado: "{error.value}"
+                                  </div>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Success Message */}
-          {!isImporting && progress === 100 && (
+          {!isImporting && progress === 100 && validationErrors.length === 0 && (
             <Alert className="border-success bg-success/10">
               <CheckCircle2 className="h-4 w-4 text-success" />
               <AlertDescription className="text-success">
