@@ -83,7 +83,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data, error } = await supabase
-        .from('user_subscriptions')
+        .from('subscriptions')
         .select(`
           *,
           plan:subscription_plans(*)
@@ -122,7 +122,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       trialEnd.setDate(trialEnd.getDate() + 7);
 
       const { data, error } = await supabase
-        .from('user_subscriptions')
+        .from('subscriptions')
         .insert({
           user_id: user.id,
           plan_id: trialPlan.id,

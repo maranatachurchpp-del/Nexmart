@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRoles } from '@/hooks/useUserRoles';
+import { useProducts } from '@/hooks/useProducts';
 import { AccessControl, TrialWarning } from '@/components/AccessControl';
 import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, LogOut, User, Settings, Upload, TrendingUp, DollarSign, AlertTriangle, ShoppingCart, Package, Star, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -16,13 +18,13 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import SmartAlertsPanel from '@/components/dashboard/SmartAlertsPanel';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
-import { produtosSample } from '@/data/mercadologico-data';
 const Dashboard = () => {
   const {
     user,
     signOut
   } = useAuth();
   const { isAdmin } = useUserRoles();
+  const { produtos, isLoading } = useProducts();
   const navigate = useNavigate();
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
@@ -44,13 +46,24 @@ const Dashboard = () => {
     // Could navigate to detailed view or update filters
   };
 
-  // Calculate KPIs from mock data
-  const calculateKPIs = () => {
-    const totalRevenue = produtosSample.reduce((sum, p) => sum + p.participacaoFaturamento * 1000, 0);
-    const avgMargin = produtosSample.reduce((sum, p) => sum + (p.margemAtual || 0), 0) / produtosSample.length;
-    const avgBreakage = produtosSample.reduce((sum, p) => sum + (p.quebraAtual || 0), 0) / produtosSample.length;
-    const kviProducts = produtosSample.filter(p => p.classificacaoKVI === 'Alta');
-    const avgBrands = produtosSample.reduce((sum, p) => sum + (p.marcasAtuais || 0), 0) / produtosSample.length;
+  // Calculate KPIs from real data
+  const calculateKPIs = (data: Produto[]) => {
+    if (data.length === 0) {
+      return {
+        faturamento: 0,
+        margemBruta: 0,
+        ruptura: 0,
+        ticketMedio: 0,
+        mixMarcas: 0,
+        itensKVI: 0
+      };
+    }
+    
+    const totalRevenue = data.reduce((sum, p) => sum + p.participacaoFaturamento * 1000, 0);
+    const avgMargin = data.reduce((sum, p) => sum + (p.margemAtual || 0), 0) / data.length;
+    const avgBreakage = data.reduce((sum, p) => sum + (p.quebraAtual || 0), 0) / data.length;
+    const kviProducts = data.filter(p => p.classificacaoKVI === 'Alta');
+    const avgBrands = data.reduce((sum, p) => sum + (p.marcasAtuais || 0), 0) / data.length;
     return {
       faturamento: totalRevenue,
       margemBruta: avgMargin,
@@ -60,7 +73,7 @@ const Dashboard = () => {
       itensKVI: kviProducts.length
     };
   };
-  const kpis = calculateKPIs();
+  const kpis = calculateKPIs(produtos);
   return <AccessControl>
       <div className="min-h-screen bg-background">
         {/* Header */}
@@ -114,55 +127,63 @@ const Dashboard = () => {
           <FilterBar filters={filters} onFiltersChange={setFilters} />
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-            <KPICard 
-              title="Faturamento" 
-              value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`} 
-              subtitle="Período selecionado" 
-              trend={{ value: 8.2, isPositive: true }} 
-              icon={DollarSign}
-              tooltip="Receita total gerada no período selecionado"
-            />
-            <KPICard 
-              title="Margem Bruta" 
-              value={`${kpis.margemBruta.toFixed(1)}%`} 
-              subtitle="Meta: 18%" 
-              trend={{ value: 2.1, isPositive: false }} 
-              icon={TrendingUp}
-              tooltip="Percentual de lucro bruto sobre as vendas. Meta ideal: acima de 18%"
-            />
-            <KPICard 
-              title="Ruptura/Quebra" 
-              value={`${kpis.ruptura.toFixed(1)}%`} 
-              subtitle="Meta: <2%" 
-              trend={{ value: 0.5, isPositive: false }} 
-              icon={AlertTriangle}
-              tooltip="Produtos fora de estoque ou com perdas. Objetivo: manter abaixo de 2%"
-            />
-            <KPICard 
-              title="Ticket Médio" 
-              value={`R$ ${kpis.ticketMedio.toFixed(2)}`} 
-              subtitle="Por transação" 
-              trend={{ value: 5.3, isPositive: true }} 
-              icon={ShoppingCart}
-              tooltip="Valor médio gasto por cliente em cada compra"
-            />
-            <KPICard 
-              title="Mix de Marcas" 
-              value={`${kpis.mixMarcas.toFixed(0)} marcas`} 
-              subtitle="Média atual" 
-              trend={{ value: 1.2, isPositive: true }} 
-              icon={Package}
-              tooltip="Quantidade média de marcas diferentes por categoria de produto"
-            />
-            <KPICard 
-              title="Itens KVI" 
-              value={`${kpis.itensKVI}`} 
-              subtitle={`${(kpis.itensKVI / produtosSample.length * 100).toFixed(0)}% do portfólio`} 
-              icon={Star}
-              tooltip="Key Value Items - Produtos-chave que mais impactam a percepção de preço do consumidor"
-            />
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+              <KPICard 
+                title="Faturamento" 
+                value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`} 
+                subtitle="Período selecionado" 
+                trend={{ value: 8.2, isPositive: true }} 
+                icon={DollarSign}
+                tooltip="Receita total gerada no período selecionado"
+              />
+              <KPICard 
+                title="Margem Bruta" 
+                value={`${kpis.margemBruta.toFixed(1)}%`} 
+                subtitle="Meta: 18%" 
+                trend={{ value: 2.1, isPositive: false }} 
+                icon={TrendingUp}
+                tooltip="Percentual de lucro bruto sobre as vendas. Meta ideal: acima de 18%"
+              />
+              <KPICard 
+                title="Ruptura/Quebra" 
+                value={`${kpis.ruptura.toFixed(1)}%`} 
+                subtitle="Meta: <2%" 
+                trend={{ value: 0.5, isPositive: false }} 
+                icon={AlertTriangle}
+                tooltip="Produtos fora de estoque ou com perdas. Objetivo: manter abaixo de 2%"
+              />
+              <KPICard 
+                title="Ticket Médio" 
+                value={`R$ ${kpis.ticketMedio.toFixed(2)}`} 
+                subtitle="Por transação" 
+                trend={{ value: 5.3, isPositive: true }} 
+                icon={ShoppingCart}
+                tooltip="Valor médio gasto por cliente em cada compra"
+              />
+              <KPICard 
+                title="Mix de Marcas" 
+                value={`${kpis.mixMarcas.toFixed(0)} marcas`} 
+                subtitle="Média atual" 
+                trend={{ value: 1.2, isPositive: true }} 
+                icon={Package}
+                tooltip="Quantidade média de marcas diferentes por categoria de produto"
+              />
+              <KPICard 
+                title="Itens KVI" 
+                value={`${kpis.itensKVI}`} 
+                subtitle={`${produtos.length > 0 ? (kpis.itensKVI / produtos.length * 100).toFixed(0) : 0}% do portfólio`} 
+                icon={Star}
+                tooltip="Key Value Items - Produtos-chave que mais impactam a percepção de preço do consumidor"
+              />
+            </div>
+          )}
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
@@ -182,10 +203,10 @@ const Dashboard = () => {
           {/* Data Table and Alerts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             <div className="lg:col-span-2 overflow-x-auto">
-              <DataTable onRowClick={handleRowClick} />
+              <DataTable produtos={produtos} isLoading={isLoading} onRowClick={handleRowClick} />
             </div>
             <div className="lg:col-span-1">
-              <AlertsPanel />
+              <AlertsPanel produtos={produtos} />
             </div>
           </div>
         </main>

@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      payment_history: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          paid_at: string | null
+          status: string
+          stripe_invoice_id: string | null
+          subscription_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          status: string
+          stripe_invoice_id?: string | null
+          subscription_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          status?: string
+          stripe_invoice_id?: string | null
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           categoria: string
@@ -105,6 +146,7 @@ export type Database = {
           id: string
           name: string | null
           store_count: number | null
+          stripe_customer_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -117,6 +159,7 @@ export type Database = {
           id?: string
           name?: string | null
           store_count?: number | null
+          stripe_customer_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -129,6 +172,7 @@ export type Database = {
           id?: string
           name?: string | null
           store_count?: number | null
+          stripe_customer_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -176,28 +220,7 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_subscriptions: {
+      subscriptions: {
         Row: {
           canceled_at: string | null
           created_at: string | null
@@ -246,6 +269,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

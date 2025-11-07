@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUpDown, Download, Star } from 'lucide-react';
-import { produtosSample } from '@/data/mercadologico-data';
 import { Produto } from '@/types/mercadologico';
 
 interface DataTableProps {
+  produtos: Produto[];
+  isLoading?: boolean;
   onRowClick?: (produto: Produto) => void;
 }
 
-export const DataTable = ({ onRowClick }: DataTableProps) => {
+export const DataTable = ({ produtos, isLoading = false, onRowClick }: DataTableProps) => {
   const [sortField, setSortField] = useState<keyof Produto>('participacaoFaturamento');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,7 +28,7 @@ export const DataTable = ({ onRowClick }: DataTableProps) => {
     }
   };
 
-  const sortedData = [...produtosSample].sort((a, b) => {
+  const sortedData = [...produtos].sort((a, b) => {
     const aValue = a[sortField];
     const bValue = b[sortField];
     
@@ -121,6 +123,24 @@ export const DataTable = ({ onRowClick }: DataTableProps) => {
     link.click();
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -131,7 +151,7 @@ export const DataTable = ({ onRowClick }: DataTableProps) => {
               {sortedData.length} produtos • Clique nas linhas para drill-down
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
+          <Button variant="outline" size="sm" onClick={exportCSV} disabled={sortedData.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             Exportar CSV
           </Button>

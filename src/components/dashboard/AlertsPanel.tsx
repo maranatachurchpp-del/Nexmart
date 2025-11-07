@@ -2,15 +2,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertTriangle, TrendingDown, Package, Star, HelpCircle } from 'lucide-react';
-import { produtosSample } from '@/data/mercadologico-data';
+import { Produto } from '@/types/mercadologico';
 
-export const AlertsPanel = () => {
+interface AlertsPanelProps {
+  produtos: Produto[];
+}
+
+export const AlertsPanel = ({ produtos }: AlertsPanelProps) => {
   // Generate alerts based on product data
   const generateAlerts = () => {
     const alerts = [];
 
     // Margin alerts
-    const lowMarginProducts = produtosSample.filter(p => 
+    const lowMarginProducts = produtos.filter(p => 
       p.status === 'destructive' || (p.margemAtual && p.margemAtual < p.margemA.min)
     );
 
@@ -27,7 +31,7 @@ export const AlertsPanel = () => {
     }
 
     // Breakage alerts
-    const highBreakageProducts = produtosSample.filter(p => 
+    const highBreakageProducts = produtos.filter(p => 
       p.quebraAtual && p.quebraAtual > p.quebraEsperada * 1.5
     );
 
@@ -44,7 +48,7 @@ export const AlertsPanel = () => {
     }
 
     // KVI price alerts
-    const kviProducts = produtosSample.filter(p => p.classificacaoKVI === 'Alta');
+    const kviProducts = produtos.filter(p => p.classificacaoKVI === 'Alta');
     if (kviProducts.length > 0) {
       alerts.push({
         id: 3,
@@ -58,7 +62,7 @@ export const AlertsPanel = () => {
     }
 
     // Brand mix alerts
-    const brandMixIssues = produtosSample.filter(p => 
+    const brandMixIssues = produtos.filter(p => 
       p.marcasAtuais && (p.marcasAtuais < p.marcasMin || p.marcasAtuais > p.marcasMax)
     );
 
@@ -75,7 +79,7 @@ export const AlertsPanel = () => {
     }
 
     // General performance alert
-    const warningProducts = produtosSample.filter(p => p.status === 'warning');
+    const warningProducts = produtos.filter(p => p.status === 'warning');
     if (warningProducts.length > 0) {
       alerts.push({
         id: 5,

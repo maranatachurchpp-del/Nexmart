@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { useToast } from '@/hooks/use-toast';
+import { useProducts } from '@/hooks/useProducts';
 import { generatePDFReport } from '@/lib/pdf-generator';
 import { generateExcelReport, generateStandardTemplate } from '@/lib/excel-generator';
-import { produtosSample } from '@/data/mercadologico-data';
 import { DashboardFilters } from '@/types/mercadologico';
 
 export default function Reports() {
+  const { produtos } = useProducts();
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
       inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -27,7 +28,7 @@ export default function Reports() {
   const handleGeneratePDF = async () => {
     setIsGenerating(prev => ({ ...prev, pdf: true }));
     try {
-      await generatePDFReport(produtosSample, filters);
+      await generatePDFReport(produtos, filters);
       toast({
         title: "Relatório PDF gerado com sucesso",
         description: "O download começará automaticamente.",
@@ -46,7 +47,7 @@ export default function Reports() {
   const handleGenerateExcel = async () => {
     setIsGenerating(prev => ({ ...prev, excel: true }));
     try {
-      await generateExcelReport(produtosSample, filters);
+      await generateExcelReport(produtos, filters);
       toast({
         title: "Relatório Excel gerado com sucesso",
         description: "O download começará automaticamente.",
@@ -65,7 +66,7 @@ export default function Reports() {
   const handleDownloadTemplate = async () => {
     setIsGenerating(prev => ({ ...prev, template: true }));
     try {
-      await generateStandardTemplate(produtosSample);
+      await generateStandardTemplate(produtos);
       toast({
         title: "Planilha Padrão baixada com sucesso",
         description: "O arquivo está disponível em seus downloads.",
