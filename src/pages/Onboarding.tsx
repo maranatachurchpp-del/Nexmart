@@ -67,19 +67,30 @@ const Onboarding = () => {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      // Atualizar profile (já foi criado automaticamente pelo trigger)
+      const { error: profileError } = await supabase
         .from('profiles')
-        .insert([{
-          user_id: user.id,
+        .update({
           name: data.name,
           company_name: data.companyName,
           annual_revenue: data.annualRevenue,
           store_count: parseInt(String(data.storeCount)) || 0,
           focus_areas: data.focusAreas,
           experience_level: data.experienceLevel,
-        }]);
+        })
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // Criar produtos sample automaticamente
+      const { error: sampleError } = await supabase.rpc('create_sample_produtos', {
+        target_user_id: user.id
+      });
+
+      if (sampleError) {
+        console.warn('Aviso ao criar produtos sample:', sampleError);
+        // Não bloqueia o fluxo se produtos já existem
+      }
 
       toast({
         title: "Configuração concluída!",
