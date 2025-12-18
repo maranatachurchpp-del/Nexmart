@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useProducts } from '@/hooks/useProducts';
+import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { AccessControl, TrialWarning } from '@/components/AccessControl';
 import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,9 @@ import { TimeSeriesChart } from '@/components/dashboard/TimeSeriesChart';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import SmartAlertsPanel from '@/components/dashboard/SmartAlertsPanel';
+import { NotificationsDropdown } from '@/components/NotificationsDropdown';
+import { ExportMenu } from '@/components/ExportMenu';
+import { CSVUploadDialog } from '@/components/structure/CSVUploadDialog';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 const Dashboard = () => {
   const {
@@ -24,8 +28,10 @@ const Dashboard = () => {
     signOut
   } = useAuth();
   const { isAdmin } = useUserRoles();
-  const { produtos, isLoading } = useProducts();
+  const { produtos, isLoading, refreshProducts } = useProducts();
+  const { createLog } = useAuditLogs();
   const navigate = useNavigate();
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
       inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -35,11 +41,18 @@ const Dashboard = () => {
   });
   const handleLogout = async () => {
     try {
+      await createLog('logout', 'auth');
       await signOut();
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
   };
+
+  const handleCsvImportSuccess = () => {
+    setCsvDialogOpen(false);
+    refreshProducts();
+  };
+
   const handleRowClick = (produto: Produto) => {
     // Implement drill-down logic
     console.log('Produto clicado:', produto);
@@ -95,9 +108,11 @@ const Dashboard = () => {
                   <User className="w-4 h-4" />
                   <span className="truncate max-w-[150px] md:max-w-none">{user?.email}</span>
                 </div>
-                <Button variant="outline" size="sm" className="hidden md:flex">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Importar CSV
+                <NotificationsDropdown />
+                <ExportMenu produtos={produtos} filters={filters} />
+                <Button variant="outline" size="sm" onClick={() => setCsvDialogOpen(true)}>
+                  <Upload className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Importar</span>
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
                   <Settings className="w-4 h-4 md:mr-2" />
@@ -210,6 +225,13 @@ const Dashboard = () => {
             </div>
           </div>
         </main>
+
+        {/* CSV Upload Dialog */}
+        <CSVUploadDialog 
+          open={csvDialogOpen} 
+          onOpenChange={setCsvDialogOpen}
+          onSuccess={handleCsvImportSuccess}
+        />
       </div>
     </AccessControl>;
 };
