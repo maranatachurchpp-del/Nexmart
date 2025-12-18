@@ -14,6 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      feature_permissions: {
+        Row: {
+          can_delete: boolean | null
+          can_export: boolean | null
+          can_read: boolean | null
+          can_write: boolean | null
+          created_at: string | null
+          feature: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          can_delete?: boolean | null
+          can_export?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          created_at?: string | null
+          feature: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          can_delete?: boolean | null
+          can_export?: boolean | null
+          can_read?: boolean | null
+          can_write?: boolean | null
+          created_at?: string | null
+          feature?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          category: string | null
+          created_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean | null
+          read_at?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number
@@ -296,6 +419,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_feature_permission: {
+        Args: { _feature: string; _permission: string; _user_id: string }
+        Returns: boolean
+      }
+      create_audit_log: {
+        Args: {
+          _action: string
+          _entity_id?: string
+          _entity_type: string
+          _metadata?: Json
+          _new_values?: Json
+          _old_values?: Json
+          _user_id: string
+        }
+        Returns: string
+      }
       create_sample_produtos: {
         Args: { target_user_id: string }
         Returns: undefined
