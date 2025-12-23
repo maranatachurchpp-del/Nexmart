@@ -10,16 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Users, 
   DollarSign, 
-  TrendingUp, 
   TrendingDown,
   Search,
   Calendar,
-  Crown,
   Clock,
-  X
+  X,
+  FileText,
+  Shield
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WebhookStatus } from '@/components/admin/WebhookStatus';
+import { AuditLogsTable } from '@/components/admin/AuditLogsTable';
+import { PermissionsManager } from '@/components/admin/PermissionsManager';
+import { UserGrowthChart } from '@/components/admin/UserGrowthChart';
 
 interface AdminStats {
   totalUsers: number;
@@ -256,9 +259,20 @@ export default function Admin() {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="users">Gestão de Usuários</TabsTrigger>
-            <TabsTrigger value="webhooks">Webhooks Stripe</TabsTrigger>
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="users">
+              <Users className="h-4 w-4 mr-2" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="audit">
+              <FileText className="h-4 w-4 mr-2" />
+              Auditoria
+            </TabsTrigger>
+            <TabsTrigger value="permissions">
+              <Shield className="h-4 w-4 mr-2" />
+              Permissões
+            </TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -315,36 +329,20 @@ export default function Admin() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="audit" className="space-y-6">
+            <AuditLogsTable />
+          </TabsContent>
+
+          <TabsContent value="permissions" className="space-y-6">
+            <PermissionsManager />
+          </TabsContent>
+
           <TabsContent value="webhooks" className="space-y-6">
             <WebhookStatus />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Crescimento de Usuários</CardTitle>
-                  <CardDescription>
-                    Evolução da base de usuários nos últimos meses
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  Gráfico de crescimento será implementado em breve
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Distribuição por Planos</CardTitle>
-                  <CardDescription>
-                    Proporção de usuários por tipo de plano
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  Gráfico de distribuição será implementado em breve
-                </CardContent>
-              </Card>
-            </div>
+            <UserGrowthChart />
           </TabsContent>
         </Tabs>
       </div>
