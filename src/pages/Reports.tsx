@@ -1,16 +1,20 @@
 import { useState } from 'react';
-import { FileText, Download, Table } from 'lucide-react';
+import { FileText, Download, Table, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { useToast } from '@/hooks/use-toast';
 import { useProducts } from '@/hooks/useProducts';
+import { useNavigate } from 'react-router-dom';
 import { generatePDFReport } from '@/lib/pdf-generator';
 import { generateExcelReport, generateStandardTemplate } from '@/lib/excel-generator';
 import { DashboardFilters } from '@/types/mercadologico';
+import { ScheduledReportsPanel } from '@/components/reports/ScheduledReportsPanel';
 
 export default function Reports() {
   const { produtos } = useProducts();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
       inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -87,12 +91,22 @@ export default function Reports() {
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Relatórios Estratégicos</h1>
-            <p className="text-muted-foreground mt-1">
-              Exporte relatórios executivos e analíticos para análise externa
-            </p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Relatórios Estratégicos</h1>
+              <p className="text-muted-foreground mt-1">
+                Exporte relatórios e configure envio automático
+              </p>
+            </div>
           </div>
+        </div>
+
+        {/* Scheduled Reports Section */}
+        <div className="mb-6">
+          <ScheduledReportsPanel />
         </div>
 
         {/* Filters */}
