@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, User, Building2, CreditCard, LogOut, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Building2, CreditCard, LogOut, Loader2, Bell } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertConfigPanel } from '@/components/alerts/AlertConfigPanel';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -261,18 +262,22 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              Perfil
+              <span className="hidden sm:inline">Perfil</span>
             </TabsTrigger>
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Empresa
+              <span className="hidden sm:inline">Empresa</span>
+            </TabsTrigger>
+            <TabsTrigger value="alerts" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Alertas</span>
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              Assinatura
+              <span className="hidden sm:inline">Assinatura</span>
             </TabsTrigger>
           </TabsList>
 
@@ -494,6 +499,11 @@ export default function Settings() {
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Alerts Tab */}
+          <TabsContent value="alerts" className="space-y-6">
+            <AlertConfigPanel />
           </TabsContent>
 
           {/* Subscription Tab */}

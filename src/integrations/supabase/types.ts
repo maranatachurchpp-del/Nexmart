@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_configurations: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          notification_channels: string[] | null
+          threshold_value: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          notification_channels?: string[] | null
+          threshold_value?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          notification_channels?: string[] | null
+          threshold_value?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      alert_history: {
+        Row: {
+          actionable_insight: string | null
+          alert_type: string
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          is_resolved: boolean | null
+          metadata: Json | null
+          priority: string
+          resolved_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          actionable_insight?: string | null
+          alert_type: string
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          priority: string
+          resolved_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          actionable_insight?: string | null
+          alert_type?: string
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          priority?: string
+          resolved_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -296,6 +374,107 @@ export type Database = {
           name?: string | null
           store_count?: number | null
           stripe_customer_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      report_history: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          file_url: string | null
+          id: string
+          recipients_notified: string[] | null
+          report_type: string
+          scheduled_report_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_url?: string | null
+          id?: string
+          recipients_notified?: string[] | null
+          report_type: string
+          scheduled_report_id?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          file_url?: string | null
+          id?: string
+          recipients_notified?: string[] | null
+          report_type?: string
+          scheduled_report_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_history_scheduled_report_id_fkey"
+            columns: ["scheduled_report_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_reports: {
+        Row: {
+          created_at: string | null
+          day_of_month: number | null
+          day_of_week: number | null
+          filters: Json | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          recipients: string[]
+          report_type: string
+          time_of_day: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          filters?: Json | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          recipients: string[]
+          report_type: string
+          time_of_day?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          filters?: Json | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          recipients?: string[]
+          report_type?: string
+          time_of_day?: string | null
           updated_at?: string | null
           user_id?: string
         }
