@@ -23,6 +23,9 @@ import { ExportMenu } from '@/components/ExportMenu';
 import { CSVUploadDialog } from '@/components/structure/CSVUploadDialog';
 import { RealtimeIndicator } from '@/components/dashboard/RealtimeIndicator';
 import { RecentChangesPanel } from '@/components/dashboard/RecentChangesPanel';
+import { RealtimeMetricsChart } from '@/components/dashboard/RealtimeMetricsChart';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { PushNotificationToggle } from '@/components/PushNotificationToggle';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 const Dashboard = () => {
   const {
@@ -109,6 +112,8 @@ const Dashboard = () => {
                   <User className="w-4 h-4" />
                   <span className="truncate max-w-[150px] md:max-w-none">{user?.email}</span>
                 </div>
+                <ThemeToggle />
+                <PushNotificationToggle />
                 <NotificationsDropdown />
                 <ExportMenu produtos={produtos} filters={filters} />
                 <Button variant="outline" size="sm" onClick={() => setCsvDialogOpen(true)}>
@@ -209,6 +214,11 @@ const Dashboard = () => {
 
           <div className="mb-4 md:mb-6">
             <TimeSeriesChart />
+          </div>
+
+          {/* Realtime Metrics Chart */}
+          <div className="mb-4 md:mb-6">
+            <RealtimeMetricsChart metrics={metrics} isConnected={isConnected} />
           </div>
 
           {/* Smart AI Alerts */}

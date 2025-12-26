@@ -1,0 +1,74 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+
+type Theme = 'light' | 'dark' | 'system';
+
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  resolvedTheme: 'light' | 'dark';
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const getSystemTheme = (): 'light' | 'dark' => {
+  if (typeof window === 'undefined') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const getStoredTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'system';
+  const stored = localStorage.getItem('nexmart-theme') as Theme;
+  return stored || 'system';
+};
+
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(
+    theme === 'system' ? getSystemTheme() : theme as 'light' | 'dark'
+  );
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem('nexmart-theme', newTheme);
+  };
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    
+    const applyTheme = (resolved: 'light' | 'dark') => {
+      root.classList.remove('light', 'dark');
+      root.classList.add(resolved);
+      setResolvedTheme(resolved);
+    };
+
+    if (theme === 'system') {
+      const systemTheme = getSystemTheme();
+      applyTheme(systemTheme);
+
+      // Listen for system theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        applyTheme(e.matches ? 'dark' : 'light');
+      };
+      
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } else {
+      applyTheme(theme);
+    }
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
