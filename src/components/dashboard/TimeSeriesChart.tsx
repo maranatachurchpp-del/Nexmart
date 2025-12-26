@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart } from 'recharts';
+import { useMemo } from 'react';
 
 export const TimeSeriesChart = () => {
   // Generate mock time series data for the last 30 days
-  const generateTimeSeriesData = () => {
+  const timeSeriesData = useMemo(() => {
     const data = [];
     const today = new Date();
     
@@ -23,9 +24,7 @@ export const TimeSeriesChart = () => {
     }
     
     return data;
-  };
-
-  const timeSeriesData = generateTimeSeriesData();
+  }, []);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { 
@@ -37,33 +36,39 @@ export const TimeSeriesChart = () => {
   };
 
   return (
-    <Card>
+    <Card className="shadow-soft animate-fade-in">
       <CardHeader>
         <CardTitle className="text-lg">Evolução Temporal</CardTitle>
         <p className="text-sm text-muted-foreground">Faturamento e margem bruta - últimos 30 dias</p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={timeSeriesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          <ComposedChart data={timeSeriesData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <defs>
+              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis 
               dataKey="data" 
               className="text-xs"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
             />
             <YAxis 
               yAxisId="revenue"
               orientation="left"
               tickFormatter={formatCurrency}
               className="text-xs"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
             />
             <YAxis 
               yAxisId="margin"
               orientation="right"
               tickFormatter={(value) => `${value}%`}
               className="text-xs"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 11 }}
             />
             <Tooltip 
               formatter={(value: number, name: string) => {
@@ -76,18 +81,19 @@ export const TimeSeriesChart = () => {
               contentStyle={{ 
                 backgroundColor: 'hsl(var(--card))', 
                 border: '1px solid hsl(var(--border))',
-                borderRadius: '8px'
+                borderRadius: '8px',
+                boxShadow: 'var(--shadow-medium)'
               }}
             />
-            <Line 
+            <Area
               yAxisId="revenue"
-              type="monotone" 
-              dataKey="faturamento" 
-              stroke="hsl(var(--primary))" 
+              type="monotone"
+              dataKey="faturamento"
+              fill="url(#revenueGradient)"
+              stroke="hsl(var(--primary))"
               strokeWidth={2}
-              dot={{ r: 3 }}
-              activeDot={{ r: 5 }}
-              name="faturamento"
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
             <Line 
               yAxisId="margin"
@@ -95,21 +101,23 @@ export const TimeSeriesChart = () => {
               dataKey="margem" 
               stroke="hsl(var(--success))" 
               strokeWidth={2}
-              dot={{ r: 3 }}
-              activeDot={{ r: 5 }}
+              dot={{ r: 2, fill: 'hsl(var(--success))' }}
+              activeDot={{ r: 5, fill: 'hsl(var(--success))' }}
               name="margem"
+              animationDuration={1000}
+              animationEasing="ease-out"
             />
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
         
         <div className="flex items-center justify-center space-x-6 mt-4 text-xs">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-primary rounded-full"></div>
-            <span>Faturamento (R$)</span>
+            <span className="text-muted-foreground">Faturamento (R$)</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-success rounded-full"></div>
-            <span>Margem Bruta (%)</span>
+            <span className="text-muted-foreground">Margem Bruta (%)</span>
           </div>
         </div>
       </CardContent>
