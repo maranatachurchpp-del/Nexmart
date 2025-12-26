@@ -3,10 +3,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { useProducts } from '@/hooks/useProducts';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 import { AccessControl, TrialWarning } from '@/components/AccessControl';
 import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart3, LogOut, User, Settings, Upload, TrendingUp, DollarSign, AlertTriangle, ShoppingCart, Package, Star, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +21,8 @@ import SmartAlertsPanel from '@/components/dashboard/SmartAlertsPanel';
 import { NotificationsDropdown } from '@/components/NotificationsDropdown';
 import { ExportMenu } from '@/components/ExportMenu';
 import { CSVUploadDialog } from '@/components/structure/CSVUploadDialog';
+import { RealtimeIndicator } from '@/components/dashboard/RealtimeIndicator';
+import { RecentChangesPanel } from '@/components/dashboard/RecentChangesPanel';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 const Dashboard = () => {
   const {
@@ -30,6 +32,7 @@ const Dashboard = () => {
   const { isAdmin } = useUserRoles();
   const { produtos, isLoading, refreshProducts } = useProducts();
   const { createLog } = useAuditLogs();
+  const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
   const navigate = useNavigate();
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [filters, setFilters] = useState<DashboardFilters>({
@@ -97,9 +100,7 @@ const Dashboard = () => {
                 <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-primary" />
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-foreground text-xl md:text-2xl">Nexmart</span>
-                  <Badge variant="outline" className="text-xs">
-                    Tempo Real
-                  </Badge>
+                  <RealtimeIndicator isConnected={isConnected} lastUpdate={metrics.lastUpdate} />
                 </div>
               </div>
               
@@ -215,14 +216,19 @@ const Dashboard = () => {
             <SmartAlertsPanel />
           </div>
 
-          {/* Data Table and Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="lg:col-span-2 overflow-x-auto">
-              <DataTable produtos={produtos} isLoading={isLoading} onRowClick={handleRowClick} />
+          {/* Realtime Activity and Alerts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+            <div className="lg:col-span-2">
+              <RecentChangesPanel changes={recentChanges} />
             </div>
             <div className="lg:col-span-1">
               <AlertsPanel produtos={produtos} />
             </div>
+          </div>
+
+          {/* Data Table */}
+          <div className="overflow-x-auto">
+            <DataTable produtos={produtos} isLoading={isLoading} onRowClick={handleRowClick} />
           </div>
         </main>
 
