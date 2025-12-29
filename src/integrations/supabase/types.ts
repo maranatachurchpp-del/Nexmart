@@ -278,6 +278,8 @@ export type Database = {
           preco_medio_min: number | null
           quebra_atual: number | null
           quebra_esperada: number | null
+          ruptura_atual: number | null
+          ruptura_esperada: number | null
           status: Database["public"]["Enums"]["status_produto"] | null
           subcategoria: string
           updated_at: string | null
@@ -304,6 +306,8 @@ export type Database = {
           preco_medio_min?: number | null
           quebra_atual?: number | null
           quebra_esperada?: number | null
+          ruptura_atual?: number | null
+          ruptura_esperada?: number | null
           status?: Database["public"]["Enums"]["status_produto"] | null
           subcategoria: string
           updated_at?: string | null
@@ -330,6 +334,8 @@ export type Database = {
           preco_medio_min?: number | null
           quebra_atual?: number | null
           quebra_esperada?: number | null
+          ruptura_atual?: number | null
+          ruptura_esperada?: number | null
           status?: Database["public"]["Enums"]["status_produto"] | null
           subcategoria?: string
           updated_at?: string | null

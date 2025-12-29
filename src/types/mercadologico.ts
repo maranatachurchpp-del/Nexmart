@@ -6,6 +6,9 @@ export interface Produto {
   categoria: string;
   subcategoria: string;
   quebraEsperada: number;
+  quebraAtual?: number;
+  rupturaEsperada?: number;
+  rupturaAtual?: number;
   margemA: { min: number; max: number };
   margemB?: { min: number; max: number };
   margemC?: { min: number; max: number };
@@ -17,7 +20,6 @@ export interface Produto {
   classificacaoKVI: 'Alta' | 'Média' | 'Baixa';
   margemAtual?: number;
   marcasAtuais?: number;
-  quebraAtual?: number;
   status: 'success' | 'warning' | 'destructive';
 }
 
@@ -62,6 +64,12 @@ export interface KPIData {
   ruptura: {
     valor: number;
     meta: number;
+    variacao?: number;
+  };
+  quebra: {
+    valor: number;
+    meta: number;
+    variacao?: number;
   };
   ticketMedio: {
     valor: number;

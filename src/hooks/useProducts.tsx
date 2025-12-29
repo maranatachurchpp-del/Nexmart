@@ -25,6 +25,8 @@ export const useProducts = () => {
         subcategoria: item.subcategoria,
         quebraEsperada: item.quebra_esperada || 0,
         quebraAtual: item.quebra_atual || 0,
+        rupturaEsperada: (item as any).ruptura_esperada || 0,
+        rupturaAtual: (item as any).ruptura_atual || 0,
         margemA: {
           min: item.margem_a_min || 0,
           max: item.margem_a_max || 0
