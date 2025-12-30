@@ -11,13 +11,10 @@ import {
 
 interface SparklineCardProps {
   title: string;
-  value: number;
-  previousValue?: number;
-  data: number[];
-  unit?: string;
-  prefix?: string;
+  value: string;
+  data: { value: number }[];
+  trend?: { value: number; isPositive: boolean };
   color?: "primary" | "success" | "warning" | "destructive";
-  formatAsCurrency?: boolean;
   icon?: React.ReactNode;
   className?: string;
 }
@@ -25,20 +22,12 @@ interface SparklineCardProps {
 export function SparklineCard({
   title,
   value,
-  previousValue,
   data,
-  unit = "",
-  prefix = "",
+  trend,
   color = "primary",
-  formatAsCurrency = false,
   icon,
   className,
 }: SparklineCardProps) {
-  const trend = previousValue
-    ? ((value - previousValue) / previousValue) * 100
-    : 0;
-  const trendDirection = trend > 0 ? "up" : trend < 0 ? "down" : "neutral";
-
   const colorMap = {
     primary: {
       fill: "hsl(var(--primary))",
@@ -58,7 +47,7 @@ export function SparklineCard({
     },
   };
 
-  const chartData = data.map((v, i) => ({ value: v, index: i }));
+  const chartData = data.map((d, i) => ({ value: d.value, index: i }));
 
   return (
     <GlassCard className={cn("p-4 overflow-hidden", className)} glow>
@@ -78,31 +67,20 @@ export function SparklineCard({
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
         </div>
         
-        {previousValue !== undefined && (
+        {trend && (
           <div className={cn(
             "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-            trendDirection === "up" && "bg-success/10 text-success",
-            trendDirection === "down" && "bg-destructive/10 text-destructive",
-            trendDirection === "neutral" && "bg-muted text-muted-foreground"
+            trend.isPositive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
           )}>
-            {trendDirection === "up" && <TrendingUp className="h-3 w-3" />}
-            {trendDirection === "down" && <TrendingDown className="h-3 w-3" />}
-            {trendDirection === "neutral" && <Minus className="h-3 w-3" />}
-            {Math.abs(trend).toFixed(1)}%
+            {trend.isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+            {Math.abs(trend.value).toFixed(1)}%
           </div>
         )}
       </div>
 
       <div className="flex items-end justify-between">
-        <div>
-          <AnimatedNumber
-            value={value}
-            decimals={formatAsCurrency ? 2 : 1}
-            prefix={prefix}
-            suffix={unit}
-            formatAsCurrency={formatAsCurrency}
-            className="text-2xl font-bold text-foreground"
-          />
+        <div className="text-2xl font-bold text-foreground">
+          {value}
         </div>
 
         <div className="w-24 h-12">

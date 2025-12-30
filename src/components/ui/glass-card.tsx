@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "elevated" | "subtle";
+  variant?: "default" | "elevated" | "subtle" | "warning" | "danger" | "success";
   glow?: boolean;
 }
 
@@ -12,6 +12,9 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
       default: "bg-card/80 backdrop-blur-xl border border-border/50 shadow-medium",
       elevated: "bg-card/90 backdrop-blur-2xl border border-border/30 shadow-strong",
       subtle: "bg-card/60 backdrop-blur-lg border border-border/20 shadow-soft",
+      warning: "bg-warning-light/50 backdrop-blur-xl border border-warning/30 shadow-medium",
+      danger: "bg-destructive-light/50 backdrop-blur-xl border border-destructive/30 shadow-medium",
+      success: "bg-success-light/50 backdrop-blur-xl border border-success/30 shadow-medium",
     };
 
     return (
