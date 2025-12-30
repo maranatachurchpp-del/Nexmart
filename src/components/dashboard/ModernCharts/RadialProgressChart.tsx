@@ -4,27 +4,22 @@ import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface RadialProgressChartProps {
   value: number;
-  target: number;
   label: string;
   sublabel?: string;
   color?: "primary" | "success" | "warning" | "destructive";
   size?: "sm" | "md" | "lg";
-  showTarget?: boolean;
   className?: string;
 }
 
 export function RadialProgressChart({
   value,
-  target,
   label,
   sublabel,
   color = "primary",
   size = "md",
-  showTarget = true,
   className,
 }: RadialProgressChartProps) {
-  const percentage = Math.min((value / target) * 100, 100);
-  const isOverTarget = value > target;
+  const percentage = Math.min(value, 100);
 
   const sizes = {
     sm: { svg: 100, stroke: 8, text: "text-xl", label: "text-xs" },
@@ -60,8 +55,7 @@ export function RadialProgressChart({
     },
   };
 
-  const actualColor = isOverTarget && color === "success" ? "destructive" : color;
-  const colors = colorMap[actualColor];
+  const colors = colorMap[color];
 
   return (
     <div className={cn("flex flex-col items-center gap-2", className)}>
@@ -94,19 +88,13 @@ export function RadialProgressChart({
           />
         </svg>
 
-        {/* Center content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <AnimatedNumber
-            value={value}
+            value={percentage}
             decimals={1}
             suffix="%"
             className={cn(text, "text-foreground")}
           />
-          {showTarget && (
-            <span className="text-xs text-muted-foreground">
-              Meta: {target}%
-            </span>
-          )}
         </div>
       </div>
 

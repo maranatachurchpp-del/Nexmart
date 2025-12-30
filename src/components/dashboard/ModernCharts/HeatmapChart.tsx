@@ -6,34 +6,35 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { GlassCard } from "@/components/ui/glass-card";
 
-interface HeatmapData {
-  x: string;
-  y: string;
-  value: number;
+interface HeatmapRow {
+  row: string;
+  columns: { column: string; value: number }[];
 }
 
 interface HeatmapChartProps {
-  data: HeatmapData[];
-  xLabels: string[];
-  yLabels: string[];
+  data: HeatmapRow[];
   title?: string;
   colorScale?: "success" | "warning" | "destructive" | "primary";
   className?: string;
-  onCellClick?: (data: HeatmapData) => void;
+  onCellClick?: (row: string, column: string, value: number) => void;
 }
 
 export function HeatmapChart({
   data,
-  xLabels,
-  yLabels,
   title,
   colorScale = "primary",
   className,
   onCellClick,
 }: HeatmapChartProps) {
-  const maxValue = Math.max(...data.map((d) => d.value));
-  const minValue = Math.min(...data.map((d) => d.value));
+  // Get all column names from first row
+  const columns = data[0]?.columns.map(c => c.column) || [];
+  
+  // Get all values to calculate range
+  const allValues = data.flatMap(row => row.columns.map(col => col.value));
+  const maxValue = Math.max(...allValues, 1);
+  const minValue = Math.min(...allValues, 0);
 
   const getColor = (value: number) => {
     const normalized = maxValue === minValue ? 0.5 : (value - minValue) / (maxValue - minValue);
@@ -68,76 +69,70 @@ export function HeatmapChart({
     return scale.high;
   };
 
-  const getValue = (x: string, y: string) => {
-    const cell = data.find((d) => d.x === x && d.y === y);
-    return cell?.value ?? 0;
-  };
+  if (data.length === 0) {
+    return null;
+  }
 
   return (
-    <div className={cn("w-full", className)}>
+    <GlassCard className={cn("p-4 w-full", className)}>
       {title && (
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
+        <h3 className="text-sm font-medium text-foreground mb-4">
           {title}
         </h3>
       )}
 
       <div className="overflow-x-auto">
         <div className="inline-block min-w-full">
-          {/* X-axis labels */}
-          <div className="flex ml-20 mb-1">
-            {xLabels.map((label) => (
+          {/* Column headers */}
+          <div className="flex ml-24 mb-2">
+            {columns.map((col) => (
               <div
-                key={label}
-                className="flex-1 text-xs text-muted-foreground text-center min-w-[40px] truncate px-0.5"
-                title={label}
+                key={col}
+                className="flex-1 text-xs text-muted-foreground text-center min-w-[50px] truncate px-1 font-medium"
+                title={col}
               >
-                {label.substring(0, 3)}
+                {col}
               </div>
             ))}
           </div>
 
           {/* Heatmap grid */}
-          {yLabels.map((yLabel) => (
-            <div key={yLabel} className="flex items-center mb-1">
-              {/* Y-axis label */}
+          {data.map((row) => (
+            <div key={row.row} className="flex items-center mb-1">
+              {/* Row label */}
               <div
-                className="w-20 text-xs text-muted-foreground truncate pr-2 text-right"
-                title={yLabel}
+                className="w-24 text-xs text-muted-foreground truncate pr-2 text-right font-medium"
+                title={row.row}
               >
-                {yLabel}
+                {row.row}
               </div>
 
               {/* Cells */}
-              <div className="flex flex-1 gap-0.5">
-                {xLabels.map((xLabel) => {
-                  const value = getValue(xLabel, yLabel);
-                  const cellData = { x: xLabel, y: yLabel, value };
-
-                  return (
-                    <TooltipProvider key={`${xLabel}-${yLabel}`}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            className={cn(
-                              "flex-1 min-w-[40px] h-8 rounded transition-all duration-200",
-                              "hover:scale-105 hover:ring-2 hover:ring-primary/50",
-                              "focus:outline-none focus:ring-2 focus:ring-primary"
-                            )}
-                            style={{ backgroundColor: getColor(value) }}
-                            onClick={() => onCellClick?.(cellData)}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="text-xs">
-                            <p className="font-medium">{yLabel}</p>
-                            <p className="text-muted-foreground">{xLabel}</p>
-                            <p className="font-bold mt-1">{value.toFixed(1)}%</p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  );
-                })}
+              <div className="flex flex-1 gap-1">
+                {row.columns.map((cell) => (
+                  <TooltipProvider key={`${row.row}-${cell.column}`}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          className={cn(
+                            "flex-1 min-w-[50px] h-10 rounded-md transition-all duration-200",
+                            "hover:scale-105 hover:ring-2 hover:ring-primary/50",
+                            "focus:outline-none focus:ring-2 focus:ring-primary"
+                          )}
+                          style={{ backgroundColor: getColor(cell.value) }}
+                          onClick={() => onCellClick?.(row.row, cell.column, cell.value)}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-xs">
+                          <p className="font-medium">{row.row}</p>
+                          <p className="text-muted-foreground">{cell.column}</p>
+                          <p className="font-bold mt-1">{cell.value.toFixed(1)}%</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
               </div>
             </div>
           ))}
@@ -165,6 +160,6 @@ export function HeatmapChart({
         </div>
         <span className="text-xs text-muted-foreground">Alto</span>
       </div>
-    </div>
+    </GlassCard>
   );
 }
