@@ -173,7 +173,49 @@ export const useProducts = () => {
         description: error.message,
         variant: 'destructive',
       });
-      return { success: false, error: error.message };
+    return { success: false, error: error.message };
+    }
+  };
+
+  const bulkUpdateProducts = async (ids: string[], updates: Partial<Produto>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const updateData: Record<string, unknown> = {};
+      
+      if (updates.status) updateData.status = updates.status;
+      if (updates.classificacaoKVI) updateData.classificacao_kvi = updates.classificacaoKVI;
+      if (updates.margemA) {
+        updateData.margem_a_min = updates.margemA.min;
+        updateData.margem_a_max = updates.margemA.max;
+      }
+      if (updates.quebraEsperada !== undefined) updateData.quebra_esperada = updates.quebraEsperada;
+      if (updates.rupturaEsperada !== undefined) updateData.ruptura_esperada = updates.rupturaEsperada;
+
+      const { error } = await supabase
+        .from('produtos')
+        .update(updateData)
+        .in('id', ids);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error bulk updating products:', error);
+      throw error;
+    }
+  };
+
+  const bulkDeleteProducts = async (ids: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('produtos')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error bulk deleting products:', error);
+      throw error;
     }
   };
 
@@ -182,6 +224,8 @@ export const useProducts = () => {
     isLoading,
     saveProduct,
     deleteProduct,
+    bulkUpdateProducts,
+    bulkDeleteProducts,
     refreshProducts: fetchProducts
   };
 };
