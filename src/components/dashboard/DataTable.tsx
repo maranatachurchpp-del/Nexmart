@@ -90,6 +90,7 @@ export const DataTable = ({ produtos, isLoading = false, onRowClick }: DataTable
       'Receita (%)',
       'Margem Atual (%)',
       'Meta Margem (%)',
+      'Ruptura (%)',
       'Quebra (%)',
       'Marcas Atual',
       'Marcas Recomendado',
@@ -106,6 +107,7 @@ export const DataTable = ({ produtos, isLoading = false, onRowClick }: DataTable
       produto.participacaoFaturamento.toFixed(1),
       produto.margemAtual?.toFixed(1) || 'N/A',
       produto.margemA.min.toFixed(1),
+      produto.rupturaAtual?.toFixed(1) || 'N/A',
       produto.quebraAtual?.toFixed(1) || 'N/A',
       produto.marcasAtuais || 'N/A',
       `${produto.marcasMin}-${produto.marcasMax}`,
@@ -189,7 +191,16 @@ export const DataTable = ({ produtos, isLoading = false, onRowClick }: DataTable
                     Margem (%) <ArrowUpDown className="w-4 h-4 ml-1" />
                   </Button>
                 </TableHead>
-                <TableHead className="text-right">Quebra (%)</TableHead>
+                <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => handleSort('rupturaAtual')} className="p-0 h-auto font-medium">
+                    Ruptura (%) <ArrowUpDown className="w-4 h-4 ml-1" />
+                  </Button>
+                </TableHead>
+                <TableHead className="text-right">
+                  <Button variant="ghost" onClick={() => handleSort('quebraAtual')} className="p-0 h-auto font-medium">
+                    Quebra (%) <ArrowUpDown className="w-4 h-4 ml-1" />
+                  </Button>
+                </TableHead>
                 <TableHead className="text-right">Marcas</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -217,6 +228,9 @@ export const DataTable = ({ produtos, isLoading = false, onRowClick }: DataTable
                   <TableCell className="text-right">{produto.participacaoFaturamento.toFixed(1)}%</TableCell>
                   <TableCell className="text-right">
                     {produto.margemAtual ? `${produto.margemAtual.toFixed(1)}%` : 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {produto.rupturaAtual ? `${produto.rupturaAtual.toFixed(1)}%` : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     {produto.quebraAtual ? `${produto.quebraAtual.toFixed(1)}%` : 'N/A'}

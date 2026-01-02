@@ -1,21 +1,90 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Filter, X } from 'lucide-react';
-import { DashboardFilters } from '@/types/mercadologico';
-import { departamentosSummary, categoriasSummary } from '@/data/mercadologico-data';
+import { DashboardFilters, Produto } from '@/types/mercadologico';
 
 interface FilterBarProps {
   filters: DashboardFilters;
   onFiltersChange: (filters: DashboardFilters) => void;
+  produtos?: Produto[];
 }
 
-export const FilterBar = ({ filters, onFiltersChange }: FilterBarProps) => {
+export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBarProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Extrair departamentos únicos dos produtos
+  const departamentos = useMemo(() => {
+    const unique = [...new Set(produtos.map(p => p.departamento).filter(Boolean))];
+    return unique.sort();
+  }, [produtos]);
+
+  // Extrair categorias baseado no departamento selecionado
+  const categorias = useMemo(() => {
+    const filtered = filters.departamento 
+      ? produtos.filter(p => p.departamento === filters.departamento)
+      : produtos;
+    const unique = [...new Set(filtered.map(p => p.categoria).filter(Boolean))];
+    return unique.sort();
+  }, [produtos, filters.departamento]);
+
+  // Extrair subcategorias baseado na categoria selecionada
+  const subcategorias = useMemo(() => {
+    const filtered = filters.categoria 
+      ? produtos.filter(p => p.categoria === filters.categoria)
+      : produtos;
+    const unique = [...new Set(filtered.map(p => p.subcategoria).filter(Boolean))];
+    return unique.sort();
+  }, [produtos, filters.categoria]);
+
   const handleFilterChange = (key: keyof DashboardFilters, value: any) => {
-    onFiltersChange({ ...filters, [key]: value });
+    const newFilters = { ...filters, [key]: value };
+    
+    // Limpar filtros dependentes quando o pai muda
+    if (key === 'departamento') {
+      newFilters.categoria = undefined;
+      newFilters.subcategoria = undefined;
+    } else if (key === 'categoria') {
+      newFilters.subcategoria = undefined;
+    }
+    
+    onFiltersChange(newFilters);
+  };
+
+  const handlePeriodChange = (value: string) => {
+    const now = new Date();
+    let inicio: Date;
+    
+    switch (value) {
+      case '7d':
+        inicio = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        inicio = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        inicio = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case 'ytd':
+        inicio = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        inicio = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    
+    onFiltersChange({
+      ...filters,
+      periodo: { inicio, fim: now }
+    });
+  };
+
+  const getPeriodValue = () => {
+    const diffDays = Math.round((filters.periodo.fim.getTime() - filters.periodo.inicio.getTime()) / (24 * 60 * 60 * 1000));
+    if (diffDays <= 7) return '7d';
+    if (diffDays <= 30) return '30d';
+    if (diffDays <= 90) return '90d';
+    return 'ytd';
   };
 
   const clearFilters = () => {
@@ -34,10 +103,6 @@ export const FilterBar = ({ filters, onFiltersChange }: FilterBarProps) => {
 
   const hasActiveFilters = filters.departamento || filters.categoria || filters.subcategoria || filters.loja || filters.kvi !== 'todos';
 
-  const availableCategories = filters.departamento 
-    ? categoriasSummary.filter(cat => cat.departamento === filters.departamento)
-    : categoriasSummary;
-
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -45,11 +110,12 @@ export const FilterBar = ({ filters, onFiltersChange }: FilterBarProps) => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
-              <Select defaultValue="30d">
+              <Select value={getPeriodValue()} onValueChange={handlePeriodChange}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="7d">7 dias</SelectItem>
                   <SelectItem value="30d">30 dias</SelectItem>
                   <SelectItem value="90d">90 dias</SelectItem>
                   <SelectItem value="ytd">YTD</SelectItem>
@@ -106,8 +172,8 @@ export const FilterBar = ({ filters, onFiltersChange }: FilterBarProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos</SelectItem>
-                  {departamentosSummary.map(dept => (
-                    <SelectItem key={dept.codigo} value={dept.nome}>{dept.nome}</SelectItem>
+                  {departamentos.map(dept => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -125,8 +191,8 @@ export const FilterBar = ({ filters, onFiltersChange }: FilterBarProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  {availableCategories.map(cat => (
-                    <SelectItem key={cat.codigo} value={cat.nome}>{cat.nome}</SelectItem>
+                  {categorias.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -144,8 +210,9 @@ export const FilterBar = ({ filters, onFiltersChange }: FilterBarProps) => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
-                  <SelectItem value="sub1">Açúcar Cristal</SelectItem>
-                  <SelectItem value="sub2">Chocolate em Pó</SelectItem>
+                  {subcategorias.map(sub => (
+                    <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

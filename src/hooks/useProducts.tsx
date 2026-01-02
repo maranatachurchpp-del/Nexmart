@@ -25,8 +25,8 @@ export const useProducts = () => {
         subcategoria: item.subcategoria,
         quebraEsperada: item.quebra_esperada || 0,
         quebraAtual: item.quebra_atual || 0,
-        rupturaEsperada: (item as any).ruptura_esperada || 0,
-        rupturaAtual: (item as any).ruptura_atual || 0,
+        rupturaEsperada: item.ruptura_esperada || 0,
+        rupturaAtual: item.ruptura_atual || 0,
         margemA: {
           min: item.margem_a_min || 0,
           max: item.margem_a_max || 0
@@ -97,6 +97,8 @@ export const useProducts = () => {
         subcategoria: produto.subcategoria,
         quebra_esperada: produto.quebraEsperada || 0,
         quebra_atual: produto.quebraAtual || 0,
+        ruptura_esperada: produto.rupturaEsperada || 0,
+        ruptura_atual: produto.rupturaAtual || 0,
         margem_a_min: produto.margemA?.min || 0,
         margem_a_max: produto.margemA?.max || 0,
         marcas_min: produto.marcasMin || 0,

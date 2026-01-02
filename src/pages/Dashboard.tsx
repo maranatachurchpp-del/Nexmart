@@ -460,7 +460,7 @@ const Dashboard = () => {
           <TrialBanner />
           
           {/* Filters */}
-          <FilterBar filters={filters} onFiltersChange={setFilters} />
+          <FilterBar filters={filters} onFiltersChange={setFilters} produtos={produtos} />
 
           {/* Draggable Widgets */}
           <DragDropContext onDragEnd={handleDragEnd}>
