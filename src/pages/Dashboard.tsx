@@ -41,7 +41,7 @@ import { DashboardFilters, Produto } from '@/types/mercadologico';
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRoles();
-  const { produtos, isLoading, refreshProducts } = useProducts();
+  const { produtos, isLoading, refreshProducts, bulkUpdateProducts, bulkDeleteProducts } = useProducts();
   const { createLog } = useAuditLogs();
   const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
   const { widgets, reorderWidgets, toggleWidgetVisibility, resetToDefault } = useDashboardWidgets();
@@ -388,7 +388,13 @@ const Dashboard = () => {
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="overflow-x-auto">
               <GlassCard className="p-0 overflow-hidden">
-                <DataTable produtos={produtos} isLoading={isLoading} onRowClick={handleRowClick} />
+                <DataTable 
+                  produtos={produtos} 
+                  isLoading={isLoading} 
+                  onRowClick={handleRowClick}
+                  onBulkUpdate={bulkUpdateProducts}
+                  onBulkDelete={bulkDeleteProducts}
+                />
               </GlassCard>
             </div>
           </DraggableWidget>
