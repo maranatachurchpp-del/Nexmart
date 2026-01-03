@@ -47,6 +47,25 @@ export const AlertsPanel = ({ produtos }: AlertsPanelProps) => {
       });
     }
 
+    // Stockout/Rupture alerts
+    const highRuptureProducts = produtos.filter(p => 
+      p.rupturaAtual !== undefined && 
+      p.rupturaEsperada !== undefined &&
+      p.rupturaAtual > p.rupturaEsperada * 1.5
+    );
+
+    if (highRuptureProducts.length > 0) {
+      alerts.push({
+        id: 6,
+        tipo: 'ruptura',
+        severidade: 'destructive',
+        icon: AlertTriangle,
+        titulo: 'Ruptura Crítica',
+        mensagem: `${highRuptureProducts.length} produtos com ruptura acima do esperado`,
+        detalhes: highRuptureProducts.slice(0, 2).map(p => `${p.descricao} (${p.rupturaAtual?.toFixed(1)}%)`).join(', ')
+      });
+    }
+
     // KVI price alerts
     const kviProducts = produtos.filter(p => p.classificacaoKVI === 'Alta');
     if (kviProducts.length > 0) {

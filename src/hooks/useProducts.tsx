@@ -9,10 +9,12 @@ export const useProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch with explicit count to check for pagination needs
+      const { data, error, count } = await supabase
         .from('produtos')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .limit(10000); // Explicit limit to avoid default 1000
 
       if (error) throw error;
 

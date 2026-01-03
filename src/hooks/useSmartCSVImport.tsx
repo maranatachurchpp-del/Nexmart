@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -36,6 +36,14 @@ interface SmartImportResult {
   errors: ValidationIssue[];
 }
 
+interface ImportProgress {
+  currentBatch: number;
+  totalBatches: number;
+  processedRecords: number;
+  totalRecords: number;
+  estimatedTimeRemaining?: number;
+}
+
 const TARGET_COLUMNS = [
   { name: 'codigo', required: true, aliases: ['cod', 'code', 'sku', 'código', 'id_produto', 'produto_id'] },
   { name: 'descricao', required: true, aliases: ['desc', 'description', 'descrição', 'nome', 'name', 'produto', 'item'] },
@@ -59,11 +67,32 @@ const TARGET_COLUMNS = [
   { name: 'status', required: false, aliases: ['situacao', 'estado', 'state'] },
 ];
 
+// Retry configuration
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 1000, // 1 second
+  maxDelay: 10000, // 10 seconds
+};
+
+// Batch configuration based on file size
+const getBatchConfig = (totalRows: number) => {
+  if (totalRows > 10000) {
+    return { batchSize: 50, delayBetweenBatches: 150 };
+  } else if (totalRows > 5000) {
+    return { batchSize: 75, delayBetweenBatches: 100 };
+  } else {
+    return { batchSize: 100, delayBetweenBatches: 50 };
+  }
+};
+
 export const useSmartCSVImport = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isCancelledRef = useRef(false);
 
   const normalizeColumnName = (name: string): string => {
     return name
@@ -82,13 +111,12 @@ export const useSmartCSVImport = () => {
     if (s1 === s2) return 1;
     if (s1.includes(s2) || s2.includes(s1)) return 0.8;
     
-    // Levenshtein distance based similarity
     const longer = s1.length > s2.length ? s1 : s2;
     const shorter = s1.length > s2.length ? s2 : s1;
     
     if (longer.length === 0) return 1;
     
-    const costs = [];
+    const costs: number[] = [];
     for (let i = 0; i <= shorter.length; i++) {
       let lastValue = i;
       for (let j = 0; j <= longer.length; j++) {
@@ -114,7 +142,6 @@ export const useSmartCSVImport = () => {
     let highestConfidence = 0;
 
     for (const target of TARGET_COLUMNS) {
-      // Check exact match
       if (normalizeColumnName(sourceColumn) === normalizeColumnName(target.name)) {
         return {
           sourceColumn,
@@ -124,7 +151,6 @@ export const useSmartCSVImport = () => {
         };
       }
 
-      // Check aliases
       for (const alias of target.aliases) {
         const similarity = calculateSimilarity(sourceColumn, alias);
         if (similarity > highestConfidence && similarity > 0.6) {
@@ -138,7 +164,6 @@ export const useSmartCSVImport = () => {
         }
       }
 
-      // Check target name similarity
       const nameSimilarity = calculateSimilarity(sourceColumn, target.name);
       if (nameSimilarity > highestConfidence && nameSimilarity > 0.6) {
         highestConfidence = nameSimilarity;
@@ -158,7 +183,6 @@ export const useSmartCSVImport = () => {
     const buffer = await file.slice(0, 1024).arrayBuffer();
     const bytes = new Uint8Array(buffer);
     
-    // Check for BOM
     if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
       return 'UTF-8';
     }
@@ -169,7 +193,6 @@ export const useSmartCSVImport = () => {
       return 'UTF-16BE';
     }
     
-    // Try to detect encoding from content
     let hasHighBytes = false;
     for (let i = 0; i < bytes.length; i++) {
       if (bytes[i] > 127) {
@@ -191,11 +214,9 @@ export const useSmartCSVImport = () => {
       return XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
     }
     
-    // CSV/TSV
-    const encoding = await detectEncoding(file);
+    await detectEncoding(file);
     const text = await file.text();
     
-    // Detect delimiter
     const firstLine = text.split('\n')[0];
     const delimiters = [',', ';', '\t', '|'];
     let bestDelimiter = ',';
@@ -209,7 +230,6 @@ export const useSmartCSVImport = () => {
       }
     }
     
-    // Parse with detected delimiter
     const lines = text.split('\n').filter(line => line.trim());
     const headers = lines[0].split(bestDelimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
     
@@ -222,6 +242,40 @@ export const useSmartCSVImport = () => {
       return row;
     });
   };
+
+  // Retry with exponential backoff
+  const retryWithBackoff = async <T,>(
+    operation: () => Promise<T>,
+    retryCount = 0
+  ): Promise<T> => {
+    try {
+      return await operation();
+    } catch (error: any) {
+      const isRetryable = 
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('network') ||
+        error.message?.includes('timeout') ||
+        error.code === 'PGRST116' ||
+        error.code === '503';
+
+      if (isRetryable && retryCount < RETRY_CONFIG.maxRetries) {
+        const delay = Math.min(
+          RETRY_CONFIG.baseDelay * Math.pow(2, retryCount),
+          RETRY_CONFIG.maxDelay
+        );
+        
+        console.log(`Tentativa ${retryCount + 1} falhou. Retentando em ${delay}ms...`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return retryWithBackoff(operation, retryCount + 1);
+      }
+      
+      throw error;
+    }
+  };
+
+  // Delay helper
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const analyzeFile = useCallback(async (file: File): Promise<ImportAnalysis> => {
     setIsAnalyzing(true);
@@ -236,7 +290,6 @@ export const useSmartCSVImport = () => {
       const issues: ValidationIssue[] = [];
       const missingFields: string[] = [];
 
-      // Map columns
       for (const sourceCol of columnsDetected) {
         const mapping = findBestColumnMatch(sourceCol);
         if (mapping) {
@@ -245,7 +298,6 @@ export const useSmartCSVImport = () => {
       }
       setProgress(50);
 
-      // Check for required fields
       const mappedTargets = columnMappings.map(m => m.targetColumn);
       for (const target of TARGET_COLUMNS) {
         if (target.required && !mappedTargets.includes(target.name)) {
@@ -253,7 +305,6 @@ export const useSmartCSVImport = () => {
         }
       }
 
-      // Validate data
       let validRows = 0;
       data.forEach((row, index) => {
         let rowValid = true;
@@ -261,7 +312,6 @@ export const useSmartCSVImport = () => {
         for (const mapping of columnMappings) {
           const value = row[mapping.sourceColumn];
           
-          // Check numeric fields
           if (['margem_a_min', 'margem_a_max', 'quebra_esperada', 'quebra_atual', 
                'ruptura_esperada', 'ruptura_atual', 'marcas_min', 'marcas_max',
                'marcas_atuais', 'giro_ideal_mes', 'participacao_faturamento',
@@ -278,7 +328,6 @@ export const useSmartCSVImport = () => {
             }
           }
 
-          // Check KVI classification
           if (mapping.targetColumn === 'classificacao_kvi' && value) {
             const normalized = String(value).toLowerCase().trim();
             if (!['alta', 'média', 'media', 'baixa'].includes(normalized)) {
@@ -297,7 +346,6 @@ export const useSmartCSVImport = () => {
       });
       setProgress(80);
 
-      // Suggest defaults for missing fields
       const suggestedDefaults: Record<string, any> = {};
       for (const field of missingFields) {
         switch (field) {
@@ -349,6 +397,18 @@ export const useSmartCSVImport = () => {
     }
   }, []);
 
+  const cancelImport = useCallback(() => {
+    isCancelledRef.current = true;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    toast({
+      title: 'Importação cancelada',
+      description: 'A importação foi interrompida pelo usuário',
+      variant: 'destructive',
+    });
+  }, []);
+
   const importData = useCallback(async (
     file: File,
     mappings: ColumnMapping[],
@@ -357,6 +417,8 @@ export const useSmartCSVImport = () => {
   ): Promise<SmartImportResult> => {
     setIsImporting(true);
     setProgress(0);
+    isCancelledRef.current = false;
+    abortControllerRef.current = new AbortController();
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -368,6 +430,10 @@ export const useSmartCSVImport = () => {
 
       // Transform data
       for (let i = 0; i < data.length; i++) {
+        if (isCancelledRef.current) {
+          throw new Error('Importação cancelada pelo usuário');
+        }
+
         const row = data[i];
         const record: Record<string, any> = {
           user_id: user.id,
@@ -378,7 +444,6 @@ export const useSmartCSVImport = () => {
         for (const mapping of mappings) {
           let value = row[mapping.sourceColumn];
           
-          // Type conversion
           if (['margem_a_min', 'margem_a_max', 'quebra_esperada', 'quebra_atual',
                'ruptura_esperada', 'ruptura_atual', 'marcas_min', 'marcas_max',
                'marcas_atuais', 'giro_ideal_mes', 'participacao_faturamento',
@@ -386,7 +451,6 @@ export const useSmartCSVImport = () => {
             value = parseFloat(String(value || defaults[mapping.targetColumn] || 0).replace(',', '.')) || 0;
           }
 
-          // KVI normalization
           if (mapping.targetColumn === 'classificacao_kvi') {
             const normalized = String(value || defaults.classificacao_kvi || 'Média').toLowerCase().trim();
             if (normalized === 'alta' || normalized === 'high') value = 'Alta';
@@ -394,7 +458,6 @@ export const useSmartCSVImport = () => {
             else value = 'Média';
           }
 
-          // Status normalization
           if (mapping.targetColumn === 'status') {
             const normalized = String(value || defaults.status || 'success').toLowerCase().trim();
             if (['warning', 'alerta', 'atenção'].includes(normalized)) value = 'warning';
@@ -405,14 +468,12 @@ export const useSmartCSVImport = () => {
           record[mapping.targetColumn] = value;
         }
 
-        // Apply defaults
         for (const [key, defaultValue] of Object.entries(defaults)) {
           if (record[key] === undefined || record[key] === '' || record[key] === null) {
             record[key] = defaultValue;
           }
         }
 
-        // Check required fields
         const requiredFields = ['codigo', 'descricao', 'departamento', 'categoria', 'subcategoria'];
         for (const field of requiredFields) {
           if (!record[field] || String(record[field]).trim() === '') {
@@ -430,41 +491,103 @@ export const useSmartCSVImport = () => {
           validRecords.push(record);
         }
 
-        setProgress(Math.floor((i / data.length) * 50));
+        setProgress(Math.floor((i / data.length) * 30));
       }
 
       if (validRecords.length === 0) {
         throw new Error('Nenhum registro válido para importar');
       }
 
-      // Import in batches
-      const batchSize = 100;
+      // Get batch configuration based on file size
+      const { batchSize, delayBetweenBatches } = getBatchConfig(validRecords.length);
+      const totalBatches = Math.ceil(validRecords.length / batchSize);
+      
       let imported = 0;
       let updated = 0;
+      const startTime = Date.now();
 
       for (let i = 0; i < validRecords.length; i += batchSize) {
-        const batch = validRecords.slice(i, i + batchSize);
-
-        if (upsertMode) {
-          const { error, data: upsertData } = await supabase
-            .from('produtos')
-            .upsert(batch, { onConflict: 'user_id,codigo' })
-            .select();
-
-          if (error) throw error;
-          updated += upsertData?.length || 0;
-        } else {
-          const { error } = await supabase
-            .from('produtos')
-            .insert(batch);
-
-          if (error) throw error;
-          imported += batch.length;
+        if (isCancelledRef.current) {
+          throw new Error('Importação cancelada pelo usuário');
         }
 
-        setProgress(50 + Math.floor((i / validRecords.length) * 50));
+        const batchNumber = Math.floor(i / batchSize) + 1;
+        const batch = validRecords.slice(i, i + batchSize);
+
+        // Update progress info
+        const elapsedTime = Date.now() - startTime;
+        const recordsProcessed = i;
+        const estimatedTimeRemaining = recordsProcessed > 0 
+          ? Math.round((elapsedTime / recordsProcessed) * (validRecords.length - recordsProcessed) / 1000)
+          : undefined;
+
+        setImportProgress({
+          currentBatch: batchNumber,
+          totalBatches,
+          processedRecords: i,
+          totalRecords: validRecords.length,
+          estimatedTimeRemaining,
+        });
+
+        try {
+          if (upsertMode) {
+            const result = await retryWithBackoff(async () => {
+              const { error, data: upsertData } = await supabase
+                .from('produtos')
+                .upsert(batch, { onConflict: 'user_id,codigo' })
+                .select();
+
+              if (error) throw error;
+              return upsertData;
+            });
+
+            updated += result?.length || 0;
+          } else {
+            await retryWithBackoff(async () => {
+              const { error } = await supabase
+                .from('produtos')
+                .insert(batch);
+
+              if (error) throw error;
+            });
+
+            imported += batch.length;
+          }
+        } catch (batchError: any) {
+          // Log batch error but continue with remaining batches
+          console.error(`Erro no lote ${batchNumber}:`, batchError);
+          
+          // Add error for each record in the failed batch
+          for (let j = 0; j < batch.length; j++) {
+            errors.push({
+              row: i + j + 2,
+              column: '',
+              message: `Falha ao importar: ${batchError.message}`,
+              severity: 'error',
+            });
+          }
+          
+          // If it's a network error, throw to stop the import
+          if (batchError.message?.includes('Failed to fetch')) {
+            throw new Error(
+              `Erro de conexão ao importar lote ${batchNumber}/${totalBatches}. ` +
+              `${imported + updated} registros foram processados antes da falha. ` +
+              `Verifique sua conexão e tente novamente.`
+            );
+          }
+        }
+
+        const progressPercent = 30 + Math.floor((i / validRecords.length) * 70);
+        setProgress(progressPercent);
+
+        // Add delay between batches to avoid throttling
+        if (i + batchSize < validRecords.length) {
+          await delay(delayBetweenBatches);
+        }
       }
 
+      const totalProcessed = imported + updated;
+      
       toast({
         title: 'Importação concluída!',
         description: upsertMode
@@ -479,9 +602,20 @@ export const useSmartCSVImport = () => {
         errors,
       };
     } catch (error: any) {
+      // Enhanced error messages
+      let errorMessage = error.message;
+      
+      if (error.message?.includes('Failed to fetch')) {
+        errorMessage = 'Erro de conexão com o servidor. Isso pode ocorrer com arquivos muito grandes. Tente dividir o arquivo em partes menores ou verificar sua conexão.';
+      } else if (error.message?.includes('timeout')) {
+        errorMessage = 'O servidor demorou muito para responder. Tente novamente ou divida o arquivo em partes menores.';
+      } else if (error.message?.includes('payload too large')) {
+        errorMessage = 'O arquivo é muito grande. Divida-o em arquivos menores com até 5.000 linhas cada.';
+      }
+
       toast({
         title: 'Erro na importação',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
 
@@ -492,13 +626,15 @@ export const useSmartCSVImport = () => {
         errors: [{
           row: 0,
           column: '',
-          message: error.message,
+          message: errorMessage,
           severity: 'error',
         }],
       };
     } finally {
       setIsImporting(false);
       setProgress(100);
+      setImportProgress(null);
+      abortControllerRef.current = null;
     }
   }, []);
 
@@ -543,9 +679,11 @@ export const useSmartCSVImport = () => {
     isImporting,
     progress,
     analysis,
+    importProgress,
     analyzeFile,
     importData,
     generateTemplate,
+    cancelImport,
     resetAnalysis: () => setAnalysis(null),
   };
 };
