@@ -28,6 +28,8 @@ import {
   Link2,
   Unlink,
   RefreshCw,
+  Clock,
+  StopCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,9 +53,11 @@ export function ImportWizard({ open, onOpenChange, onSuccess }: ImportWizardProp
     isImporting,
     progress,
     analysis,
+    importProgress,
     analyzeFile,
     importData,
     generateTemplate,
+    cancelImport,
     resetAnalysis,
   } = useSmartCSVImport();
 
@@ -95,12 +99,23 @@ export function ImportWizard({ open, onOpenChange, onSuccess }: ImportWizardProp
   }, [file, analysis, customMappings, customDefaults, upsertMode, importData, onSuccess]);
 
   const handleClose = () => {
+    if (isImporting) {
+      cancelImport();
+    }
     setStep("upload");
     setFile(null);
     resetAnalysis();
     setCustomMappings({});
     setCustomDefaults({});
     onOpenChange(false);
+  };
+
+  const formatTimeRemaining = (seconds: number | undefined) => {
+    if (!seconds) return '';
+    if (seconds < 60) return `~${seconds}s restantes`;
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `~${minutes}m ${secs}s restantes`;
   };
 
   const renderUploadStep = () => (
@@ -131,7 +146,7 @@ export function ImportWizard({ open, onOpenChange, onSuccess }: ImportWizardProp
                 Arraste seu arquivo ou clique para selecionar
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                CSV, XLSX, XLS ou TSV (max. 10MB)
+                CSV, XLSX, XLS ou TSV (max. 50MB)
               </p>
             </div>
           </div>
@@ -177,6 +192,19 @@ export function ImportWizard({ open, onOpenChange, onSuccess }: ImportWizardProp
           <p className="text-xs text-muted-foreground">Qualidade</p>
         </GlassCard>
       </div>
+
+      {/* Large file warning */}
+      {analysis && analysis.totalRows > 10000 && (
+        <div className="p-3 bg-warning/10 rounded-lg border border-warning/30 flex items-start gap-2">
+          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-warning">Arquivo grande detectado</p>
+            <p className="text-muted-foreground">
+              {analysis.totalRows.toLocaleString()} linhas. A importação será feita em lotes menores para garantir estabilidade.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Column Mappings */}
       <div>
@@ -358,9 +386,38 @@ export function ImportWizard({ open, onOpenChange, onSuccess }: ImportWizardProp
       </div>
 
       {isImporting && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Progress value={progress} className="h-2" />
-          <p className="text-sm text-muted-foreground">Importando... {progress}%</p>
+          
+          {importProgress && (
+            <div className="space-y-1">
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <RefreshCw className="h-4 w-4 animate-spin" />
+                <span>
+                  Processando lote {importProgress.currentBatch} de {importProgress.totalBatches}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {importProgress.processedRecords.toLocaleString()} de {importProgress.totalRecords.toLocaleString()} registros
+              </p>
+              {importProgress.estimatedTimeRemaining && (
+                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  <span>{formatTimeRemaining(importProgress.estimatedTimeRemaining)}</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={cancelImport}
+            className="mt-2"
+          >
+            <StopCircle className="h-4 w-4 mr-2" />
+            Cancelar Importação
+          </Button>
         </div>
       )}
     </div>

@@ -113,14 +113,20 @@ const Dashboard = () => {
 
   const kpis = calculateKPIs(produtos);
 
-  // Generate sparkline data for KPIs
-  const generateSparklineData = (base: number, variance: number = 0.1) => {
-    return Array.from({ length: 7 }, (_, i) => ({
-      value: base * (1 + (Math.random() - 0.5) * variance)
-    }));
+  // Generate sparkline data for KPIs - using real data trends when available
+  const generateSparklineData = (base: number, variance: number = 0.1, useRealTrend: boolean = false) => {
+    // When we have historical data, we should replace this with actual trends
+    // For now, generate simulated but consistent data based on the base value
+    const seed = base * 1000; // Use base as seed for consistency
+    return Array.from({ length: 7 }, (_, i) => {
+      const pseudoRandom = Math.sin(seed + i) * 0.5 + 0.5; // Deterministic "random" based on position
+      return {
+        value: base * (1 + (pseudoRandom - 0.5) * variance * 2)
+      };
+    });
   };
 
-  // Generate heatmap data from products
+  // Generate heatmap data from products - now using real giro_ideal_mes
   const generateHeatmapData = () => {
     const departments = [...new Set(produtos.map(p => p.departamento))].slice(0, 6);
     const categories = ['Margem', 'Ruptura', 'Quebra', 'Giro', 'Marcas'];
@@ -130,7 +136,8 @@ const Dashboard = () => {
       const avgMargin = deptProducts.reduce((s, p) => s + (p.margemAtual || 0), 0) / (deptProducts.length || 1);
       const avgRuptura = deptProducts.reduce((s, p) => s + (p.rupturaAtual || 0), 0) / (deptProducts.length || 1);
       const avgQuebra = deptProducts.reduce((s, p) => s + (p.quebraAtual || 0), 0) / (deptProducts.length || 1);
-      const avgGiro = 50 + Math.random() * 50;
+      // Use real giro_ideal_mes data instead of random
+      const avgGiro = deptProducts.reduce((s, p) => s + (p.giroIdealMes || 0), 0) / (deptProducts.length || 1);
       const avgMarcas = deptProducts.reduce((s, p) => s + (p.marcasAtuais || 0), 0) / (deptProducts.length || 1);
       
       return {

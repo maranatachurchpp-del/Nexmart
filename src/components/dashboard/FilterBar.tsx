@@ -149,20 +149,8 @@ export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBar
 
         {isExpanded && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground mb-2 block">Loja</label>
-              <Select value={filters.loja || ''} onValueChange={(value) => handleFilterChange('loja', value || undefined)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as lojas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas as lojas</SelectItem>
-                  <SelectItem value="loja1">Loja Centro</SelectItem>
-                  <SelectItem value="loja2">Loja Bairro</SelectItem>
-                  <SelectItem value="loja3">Loja Shopping</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Loja filter - removed hardcoded options since there's no store data */}
+            {/* If store table is added, dynamically load options here */}
 
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">Departamento</label>
