@@ -104,8 +104,8 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
     if (!user) return;
 
     try {
+      // Note: _user_id is no longer needed as the function uses auth.uid() internally
       const { error } = await supabase.rpc('create_audit_log', {
-        _user_id: user.id,
         _action: action,
         _entity_type: entityType,
         _entity_id: entityId || null,

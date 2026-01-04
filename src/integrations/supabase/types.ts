@@ -608,18 +608,30 @@ export type Database = {
         Args: { _feature: string; _permission: string; _user_id: string }
         Returns: boolean
       }
-      create_audit_log: {
-        Args: {
-          _action: string
-          _entity_id?: string
-          _entity_type: string
-          _metadata?: Json
-          _new_values?: Json
-          _old_values?: Json
-          _user_id: string
-        }
-        Returns: string
-      }
+      create_audit_log:
+        | {
+            Args: {
+              _action: string
+              _entity_id?: string
+              _entity_type: string
+              _metadata?: Json
+              _new_values?: Json
+              _old_values?: Json
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _action: string
+              _entity_id?: string
+              _entity_type: string
+              _metadata?: Json
+              _new_values?: Json
+              _old_values?: Json
+              _user_id: string
+            }
+            Returns: string
+          }
       create_sample_produtos: {
         Args: { target_user_id: string }
         Returns: undefined
