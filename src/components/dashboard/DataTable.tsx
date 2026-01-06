@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowUpDown, Download, Star, Pencil, Trash2, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { ArrowUpDown, Download, Star, Pencil, Trash2, CheckCircle, AlertTriangle, XCircle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Produto } from '@/types/mercadologico';
 import { BulkEditDialog } from './BulkEditDialog';
 import { toast } from '@/hooks/use-toast';
+import { PaginationState, ProductFilters } from '@/hooks/useProducts';
 
 interface DataTableProps {
   produtos: Produto[];
@@ -26,6 +29,11 @@ interface DataTableProps {
   onRowClick?: (produto: Produto) => void;
   onBulkUpdate?: (ids: string[], updates: Partial<Produto>) => Promise<void>;
   onBulkDelete?: (ids: string[]) => Promise<void>;
+  // Server-side pagination props
+  pagination?: PaginationState;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  onFiltersChange?: (filters: ProductFilters) => void;
 }
 
 export const DataTable = ({ 
@@ -33,27 +41,67 @@ export const DataTable = ({
   isLoading = false, 
   onRowClick,
   onBulkUpdate,
-  onBulkDelete 
+  onBulkDelete,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  onFiltersChange
 }: DataTableProps) => {
   const [sortField, setSortField] = useState<keyof Produto>('participacaoFaturamento');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const itemsPerPage = 10;
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchDebounce, setSearchDebounce] = useState<NodeJS.Timeout | null>(null);
+
+  // Server-side pagination state
+  const isServerPagination = !!pagination && !!onPageChange;
+  const currentPage = pagination?.page || 1;
+  const pageSize = pagination?.pageSize || 25;
+  const totalCount = pagination?.totalCount || produtos.length;
+  const totalPages = pagination?.totalPages || Math.ceil(produtos.length / pageSize);
+
+  // Handle search with debounce
+  useEffect(() => {
+    if (searchDebounce) {
+      clearTimeout(searchDebounce);
+    }
+    
+    const timeout = setTimeout(() => {
+      if (onFiltersChange) {
+        onFiltersChange({
+          search: searchTerm || undefined,
+          sortField: sortField as string,
+          sortDirection
+        });
+      }
+    }, 300);
+    
+    setSearchDebounce(timeout);
+    
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [searchTerm]);
 
   const handleSort = (field: keyof Produto) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
+    const newDirection = sortField === field && sortDirection === 'desc' ? 'asc' : 'desc';
+    setSortField(field);
+    setSortDirection(newDirection);
+    
+    if (onFiltersChange) {
+      onFiltersChange({
+        search: searchTerm || undefined,
+        sortField: field as string,
+        sortDirection: newDirection
+      });
     }
   };
 
-  const sortedData = [...produtos].sort((a, b) => {
+  // Client-side sorting (fallback if no server pagination)
+  const sortedData = !isServerPagination ? [...produtos].sort((a, b) => {
     const aValue = a[sortField];
     const bValue = b[sortField];
     
@@ -68,21 +116,19 @@ export const DataTable = ({
     }
     
     return 0;
-  });
+  }) : produtos;
 
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  // Client-side pagination (fallback if no server pagination)
+  const displayData = !isServerPagination 
+    ? sortedData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : produtos;
 
   // Selection handlers
   const toggleSelectAll = () => {
-    if (selectedIds.size === paginatedData.length) {
+    if (selectedIds.size === displayData.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(paginatedData.map(p => p.id!).filter(Boolean)));
+      setSelectedIds(new Set(displayData.map(p => p.id!).filter(Boolean)));
     }
   };
 
@@ -96,8 +142,8 @@ export const DataTable = ({
     setSelectedIds(newSelected);
   };
 
-  const isAllSelected = paginatedData.length > 0 && selectedIds.size === paginatedData.length;
-  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < paginatedData.length;
+  const isAllSelected = displayData.length > 0 && selectedIds.size === displayData.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < displayData.length;
 
   // Bulk actions
   const handleBulkStatusUpdate = async (status: 'success' | 'warning' | 'destructive') => {
@@ -234,6 +280,58 @@ export const DataTable = ({
     link.click();
   };
 
+  // Pagination controls
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    if (onPageChange) {
+      onPageChange(page);
+    }
+    setSelectedIds(new Set()); // Clear selection on page change
+  };
+
+  const handlePageSizeChange = (newSize: string) => {
+    const size = parseInt(newSize, 10);
+    if (onPageSizeChange) {
+      onPageSizeChange(size);
+    }
+    setSelectedIds(new Set());
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    
+    pages.push(1);
+    
+    if (currentPage > 3) {
+      pages.push('...');
+    }
+    
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    
+    for (let i = start; i <= end; i++) {
+      if (!pages.includes(i)) {
+        pages.push(i);
+      }
+    }
+    
+    if (currentPage < totalPages - 2) {
+      pages.push('...');
+    }
+    
+    if (!pages.includes(totalPages)) {
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -260,10 +358,22 @@ export const DataTable = ({
             <div>
               <CardTitle className="text-lg">Tabela Analítica</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {sortedData.length} produtos • Clique nas linhas para drill-down
+                {totalCount.toLocaleString('pt-BR')} produtos • Clique nas linhas para drill-down
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Search input */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 w-48"
+                />
+              </div>
+              
               {selectedIds.size > 0 && (
                 <>
                   <span className="text-sm text-muted-foreground">
@@ -316,7 +426,7 @@ export const DataTable = ({
                   </Button>
                 </>
               )}
-              <Button variant="outline" size="sm" onClick={exportCSV} disabled={sortedData.length === 0}>
+              <Button variant="outline" size="sm" onClick={exportCSV} disabled={produtos.length === 0}>
                 <Download className="w-4 h-4 mr-2" />
                 Exportar CSV
               </Button>
@@ -378,7 +488,7 @@ export const DataTable = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedData.map((produto) => (
+                {displayData.map((produto) => (
                   <TableRow 
                     key={produto.id || produto.codigo}
                     className="cursor-pointer hover:bg-muted/50"
@@ -434,28 +544,88 @@ export const DataTable = ({
             </Table>
           </div>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-between space-x-2 py-4">
-            <div className="text-sm text-muted-foreground">
-              Mostrando {(currentPage - 1) * itemsPerPage + 1} a{' '}
-              {Math.min(currentPage * itemsPerPage, sortedData.length)} de {sortedData.length} produtos
+          {/* Enhanced Pagination */}
+          <div className="flex items-center justify-between flex-wrap gap-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {((currentPage - 1) * pageSize) + 1} a{' '}
+                {Math.min(currentPage * pageSize, totalCount)} de {totalCount.toLocaleString('pt-BR')} produtos
+              </div>
+              
+              {/* Page size selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Itens por página:</span>
+                <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-x-2">
+            
+            {/* Page navigation */}
+            <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => goToPage(1)}
                 disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
               >
-                Anterior
+                <ChevronsLeft className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
               >
-                Próxima
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((page, index) => (
+                  typeof page === 'number' ? (
+                    <Button
+                      key={index}
+                      variant={page === currentPage ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => goToPage(page)}
+                      className="h-8 w-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ) : (
+                    <span key={index} className="px-2 text-muted-foreground">...</span>
+                  )
+                ))}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronsRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

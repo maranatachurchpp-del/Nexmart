@@ -41,12 +41,24 @@ import { DashboardFilters, Produto } from '@/types/mercadologico';
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRoles();
-  const { produtos, isLoading, refreshProducts, bulkUpdateProducts, bulkDeleteProducts } = useProducts();
+  const { 
+    produtos, 
+    allProdutos,
+    isLoading, 
+    refreshProducts, 
+    bulkUpdateProducts, 
+    bulkDeleteProducts,
+    pagination,
+    setPage,
+    setPageSize,
+    fetchPaginatedProducts
+  } = useProducts();
   const { createLog } = useAuditLogs();
   const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
   const { widgets, reorderWidgets, toggleWidgetVisibility, resetToDefault } = useDashboardWidgets();
   const navigate = useNavigate();
   const [importWizardOpen, setImportWizardOpen] = useState(false);
+  const [tableFilters, setTableFilters] = useState<{ search?: string; sortField?: string; sortDirection?: 'asc' | 'desc' }>({});
   const [filters, setFilters] = useState<DashboardFilters>({
     periodo: {
       inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -79,7 +91,19 @@ const Dashboard = () => {
     reorderWidgets(result.source.index, result.destination.index);
   };
 
-  // Calculate KPIs from real data
+  // Handle table filter changes with server-side pagination
+  const handleTableFiltersChange = (newFilters: { search?: string; sortField?: string; sortDirection?: 'asc' | 'desc' }) => {
+    setTableFilters(newFilters);
+    fetchPaginatedProducts(1, pagination.pageSize, {
+      ...newFilters,
+      departamento: filters.departamento,
+      categoria: filters.categoria,
+      subcategoria: filters.subcategoria,
+      kvi: filters.kvi
+    });
+  };
+
+  // Calculate KPIs from ALL products (not paginated) for accurate totals
   const calculateKPIs = (data: Produto[]) => {
     if (data.length === 0) {
       return {
@@ -100,18 +124,24 @@ const Dashboard = () => {
     const kviProducts = data.filter(p => p.classificacaoKVI === 'Alta');
     const avgBrands = data.reduce((sum, p) => sum + (p.marcasAtuais || 0), 0) / data.length;
     
+    // Calculate real ticket médio from average prices
+    const avgPrecoMin = data.reduce((sum, p) => sum + (p.precoMedioReferencia?.min || 0), 0) / data.length;
+    const avgPrecoMax = data.reduce((sum, p) => sum + (p.precoMedioReferencia?.max || 0), 0) / data.length;
+    const ticketMedio = (avgPrecoMin + avgPrecoMax) / 2;
+    
     return {
       faturamento: totalRevenue,
       margemBruta: avgMargin,
       ruptura: avgRuptura,
       quebra: avgQuebra,
-      ticketMedio: 85.50,
+      ticketMedio: ticketMedio || 0,
       mixMarcas: avgBrands,
       itensKVI: kviProducts.length
     };
   };
 
-  const kpis = calculateKPIs(produtos);
+  // Use allProdutos for KPIs (complete dataset) 
+  const kpis = calculateKPIs(allProdutos);
 
   // Generate sparkline data for KPIs - using real data trends when available
   const generateSparklineData = (base: number, variance: number = 0.1, useRealTrend: boolean = false) => {
@@ -126,13 +156,13 @@ const Dashboard = () => {
     });
   };
 
-  // Generate heatmap data from products - now using real giro_ideal_mes
+  // Generate heatmap data from ALL products - now using real giro_ideal_mes
   const generateHeatmapData = () => {
-    const departments = [...new Set(produtos.map(p => p.departamento))].slice(0, 6);
+    const departments = [...new Set(allProdutos.map(p => p.departamento))].slice(0, 6);
     const categories = ['Margem', 'Ruptura', 'Quebra', 'Giro', 'Marcas'];
     
     return departments.map(dept => {
-      const deptProducts = produtos.filter(p => p.departamento === dept);
+      const deptProducts = allProdutos.filter(p => p.departamento === dept);
       const avgMargin = deptProducts.reduce((s, p) => s + (p.margemAtual || 0), 0) / (deptProducts.length || 1);
       const avgRuptura = deptProducts.reduce((s, p) => s + (p.rupturaAtual || 0), 0) / (deptProducts.length || 1);
       const avgQuebra = deptProducts.reduce((s, p) => s + (p.quebraAtual || 0), 0) / (deptProducts.length || 1);
@@ -235,7 +265,7 @@ const Dashboard = () => {
                   <KPICard 
                     title="Itens KVI" 
                     value={`${kpis.itensKVI}`} 
-                    subtitle={`${produtos.length > 0 ? (kpis.itensKVI / produtos.length * 100).toFixed(0) : 0}% do portfólio`} 
+                    subtitle={`${allProdutos.length > 0 ? (kpis.itensKVI / allProdutos.length * 100).toFixed(0) : 0}% do portfólio`} 
                     icon={Star}
                     tooltip="Key Value Items - Produtos-chave"
                   />
@@ -275,7 +305,7 @@ const Dashboard = () => {
               </GlassCard>
               <GlassCard className="p-4 flex flex-col items-center justify-center">
                 <RadialProgressChart 
-                  value={produtos.length > 0 ? (kpis.itensKVI / produtos.length) * 100 : 0}
+                  value={allProdutos.length > 0 ? (kpis.itensKVI / allProdutos.length) * 100 : 0}
                   label="Cobertura KVI"
                   color="primary"
                   size="md"
@@ -315,7 +345,7 @@ const Dashboard = () => {
         );
 
       case 'heatmap':
-        if (produtos.length === 0) return null;
+        if (allProdutos.length === 0) return null;
         return (
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="mb-6">
@@ -383,7 +413,7 @@ const Dashboard = () => {
               </div>
               <div className="lg:col-span-1">
                 <GlassCard className="p-0 overflow-hidden">
-                  <AlertsPanel produtos={produtos} />
+                  <AlertsPanel produtos={allProdutos} />
                 </GlassCard>
               </div>
             </div>
@@ -401,6 +431,10 @@ const Dashboard = () => {
                   onRowClick={handleRowClick}
                   onBulkUpdate={bulkUpdateProducts}
                   onBulkDelete={bulkDeleteProducts}
+                  pagination={pagination}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  onFiltersChange={handleTableFiltersChange}
                 />
               </GlassCard>
             </div>

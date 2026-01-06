@@ -1,68 +1,176 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Produto } from '@/types/mercadologico';
 
+export interface PaginationState {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface ProductFilters {
+  departamento?: string;
+  categoria?: string;
+  subcategoria?: string;
+  kvi?: 'todos' | 'sim' | 'nao';
+  search?: string;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
+const transformProduct = (item: any): Produto => ({
+  codigo: item.codigo,
+  descricao: item.descricao,
+  departamento: item.departamento,
+  categoria: item.categoria,
+  subcategoria: item.subcategoria,
+  quebraEsperada: item.quebra_esperada || 0,
+  quebraAtual: item.quebra_atual || 0,
+  rupturaEsperada: item.ruptura_esperada || 0,
+  rupturaAtual: item.ruptura_atual || 0,
+  margemA: {
+    min: item.margem_a_min || 0,
+    max: item.margem_a_max || 0
+  },
+  margemAtual: ((item.margem_a_min || 0) + (item.margem_a_max || 0)) / 2,
+  marcasMin: item.marcas_min || 0,
+  marcasMax: item.marcas_max || 0,
+  marcasAtuais: item.marcas_atuais || 0,
+  giroIdealMes: item.giro_ideal_mes || 0,
+  participacaoFaturamento: item.participacao_faturamento || 0,
+  precoMedioReferencia: {
+    min: item.preco_medio_min || 0,
+    max: item.preco_medio_max || 0
+  },
+  classificacaoKVI: item.classificacao_kvi || 'Média',
+  status: item.status || 'success',
+  id: item.id
+});
+
 export const useProducts = () => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState<PaginationState>({
+    page: 1,
+    pageSize: 25,
+    totalCount: 0,
+    totalPages: 0
+  });
 
-  const fetchProducts = async () => {
+  // Fetch all products for KPIs and charts (without pagination)
+  const fetchAllProducts = async () => {
     try {
-      // Fetch with explicit count to check for pagination needs
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('produtos')
-        .select('*', { count: 'exact' })
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(10000); // Explicit limit to avoid default 1000
+        .limit(10000);
+
+      if (error) throw error;
+      
+      const transformed = (data || []).map(transformProduct);
+      setAllProdutos(transformed);
+      return transformed;
+    } catch (error: any) {
+      console.error('Error fetching all products:', error);
+      return [];
+    }
+  };
+
+  // Fetch paginated products for DataTable
+  const fetchPaginatedProducts = useCallback(async (
+    page: number = 1,
+    pageSize: number = 25,
+    filters?: ProductFilters
+  ) => {
+    try {
+      setIsLoading(true);
+      
+      let query = supabase
+        .from('produtos')
+        .select('*', { count: 'exact' });
+
+      // Apply filters
+      if (filters?.departamento) {
+        query = query.eq('departamento', filters.departamento);
+      }
+      if (filters?.categoria) {
+        query = query.eq('categoria', filters.categoria);
+      }
+      if (filters?.subcategoria) {
+        query = query.eq('subcategoria', filters.subcategoria);
+      }
+      if (filters?.kvi === 'sim') {
+        query = query.eq('classificacao_kvi', 'Alta');
+      } else if (filters?.kvi === 'nao') {
+        query = query.neq('classificacao_kvi', 'Alta');
+      }
+      if (filters?.search) {
+        query = query.or(`descricao.ilike.%${filters.search}%,codigo.ilike.%${filters.search}%`);
+      }
+
+      // Apply sorting
+      const sortField = filters?.sortField || 'created_at';
+      const sortDirection = filters?.sortDirection || 'desc';
+      const dbField = sortField === 'participacaoFaturamento' ? 'participacao_faturamento' :
+                      sortField === 'margemAtual' ? 'margem_a_max' :
+                      sortField === 'quebraAtual' ? 'quebra_atual' :
+                      sortField === 'rupturaAtual' ? 'ruptura_atual' :
+                      sortField === 'descricao' ? 'descricao' :
+                      sortField === 'codigo' ? 'codigo' :
+                      sortField === 'departamento' ? 'departamento' :
+                      'created_at';
+      
+      query = query.order(dbField, { ascending: sortDirection === 'asc' });
+
+      // Apply pagination
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      query = query.range(from, to);
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
-      // Transform database format to app format
-      const transformedData: Produto[] = (data || []).map(item => ({
-        codigo: item.codigo,
-        descricao: item.descricao,
-        departamento: item.departamento,
-        categoria: item.categoria,
-        subcategoria: item.subcategoria,
-        quebraEsperada: item.quebra_esperada || 0,
-        quebraAtual: item.quebra_atual || 0,
-        rupturaEsperada: item.ruptura_esperada || 0,
-        rupturaAtual: item.ruptura_atual || 0,
-        margemA: {
-          min: item.margem_a_min || 0,
-          max: item.margem_a_max || 0
-        },
-        margemAtual: ((item.margem_a_min || 0) + (item.margem_a_max || 0)) / 2,
-        marcasMin: item.marcas_min || 0,
-        marcasMax: item.marcas_max || 0,
-        marcasAtuais: item.marcas_atuais || 0,
-        giroIdealMes: item.giro_ideal_mes || 0,
-        participacaoFaturamento: item.participacao_faturamento || 0,
-        precoMedioReferencia: {
-          min: item.preco_medio_min || 0,
-          max: item.preco_medio_max || 0
-        },
-        classificacaoKVI: item.classificacao_kvi || 'Média',
-        status: item.status || 'success',
-        id: item.id
-      }));
+      const transformedData = (data || []).map(transformProduct);
+      const totalCount = count || 0;
+      const totalPages = Math.ceil(totalCount / pageSize);
 
       setProdutos(transformedData);
+      setPagination({
+        page,
+        pageSize,
+        totalCount,
+        totalPages
+      });
+
+      return { data: transformedData, totalCount, totalPages };
     } catch (error: any) {
-      console.error('Error fetching products:', error);
+      console.error('Error fetching paginated products:', error);
       toast({
         title: 'Erro ao carregar produtos',
         description: error.message,
         variant: 'destructive',
       });
+      return { data: [], totalCount: 0, totalPages: 0 };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
+  // Initial load
   useEffect(() => {
-    fetchProducts();
+    const loadData = async () => {
+      await Promise.all([
+        fetchAllProducts(),
+        fetchPaginatedProducts(1, pagination.pageSize)
+      ]);
+    };
+    
+    loadData();
 
     // Setup realtime subscription
     const channel = supabase
@@ -75,7 +183,8 @@ export const useProducts = () => {
           table: 'produtos'
         },
         () => {
-          fetchProducts();
+          fetchAllProducts();
+          fetchPaginatedProducts(pagination.page, pagination.pageSize);
         }
       )
       .subscribe();
@@ -84,6 +193,14 @@ export const useProducts = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const setPage = (page: number) => {
+    fetchPaginatedProducts(page, pagination.pageSize);
+  };
+
+  const setPageSize = (pageSize: number) => {
+    fetchPaginatedProducts(1, pageSize);
+  };
 
   const saveProduct = async (produto: Produto) => {
     try {
@@ -115,7 +232,6 @@ export const useProducts = () => {
       };
 
       if (produto.id) {
-        // Update existing
         const { error } = await supabase
           .from('produtos')
           .update(productData)
@@ -128,7 +244,6 @@ export const useProducts = () => {
           description: 'As alterações foram salvas com sucesso.',
         });
       } else {
-        // Insert new
         const { error } = await supabase
           .from('produtos')
           .insert([productData]);
@@ -175,7 +290,7 @@ export const useProducts = () => {
         description: error.message,
         variant: 'destructive',
       });
-    return { success: false, error: error.message };
+      return { success: false, error: error.message };
     }
   };
 
@@ -223,11 +338,19 @@ export const useProducts = () => {
 
   return {
     produtos,
+    allProdutos,
     isLoading,
+    pagination,
+    setPage,
+    setPageSize,
+    fetchPaginatedProducts,
     saveProduct,
     deleteProduct,
     bulkUpdateProducts,
     bulkDeleteProducts,
-    refreshProducts: fetchProducts
+    refreshProducts: () => {
+      fetchAllProducts();
+      fetchPaginatedProducts(pagination.page, pagination.pageSize);
+    }
   };
 };
