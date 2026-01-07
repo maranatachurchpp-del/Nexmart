@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRoles } from '@/hooks/useUserRoles';
@@ -6,6 +6,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
+import { useProductSnapshots } from '@/hooks/useProductSnapshots';
 import { AccessControl } from '@/components/AccessControl';
 import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
@@ -56,16 +57,51 @@ const Dashboard = () => {
   const { createLog } = useAuditLogs();
   const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
   const { widgets, reorderWidgets, toggleWidgetVisibility, resetToDefault } = useDashboardWidgets();
+  const { getSparklineData, calculateTrend } = useProductSnapshots();
   const navigate = useNavigate();
   const [importWizardOpen, setImportWizardOpen] = useState(false);
   const [tableFilters, setTableFilters] = useState<{ search?: string; sortField?: string; sortDirection?: 'asc' | 'desc' }>({});
-  const [filters, setFilters] = useState<DashboardFilters>({
-    periodo: {
-      inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      fim: new Date()
-    },
-    kvi: 'todos'
+  
+  // Initialize filters from localStorage or default
+  const [filters, setFilters] = useState<DashboardFilters>(() => {
+    try {
+      const saved = localStorage.getItem('dashboard-filters');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          periodo: {
+            inicio: new Date(parsed.periodo?.inicio || Date.now() - 30 * 24 * 60 * 60 * 1000),
+            fim: new Date(parsed.periodo?.fim || Date.now())
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to load saved filters:', e);
+    }
+    return {
+      periodo: {
+        inicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        fim: new Date()
+      },
+      kvi: 'todos'
+    };
   });
+
+  // Persist filters to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('dashboard-filters', JSON.stringify({
+        ...filters,
+        periodo: {
+          inicio: filters.periodo.inicio.toISOString(),
+          fim: filters.periodo.fim.toISOString()
+        }
+      }));
+    } catch (e) {
+      console.warn('Failed to save filters:', e);
+    }
+  }, [filters]);
 
   const handleLogout = async () => {
     try {
@@ -142,19 +178,6 @@ const Dashboard = () => {
 
   // Use allProdutos for KPIs (complete dataset) 
   const kpis = calculateKPIs(allProdutos);
-
-  // Generate sparkline data for KPIs - using real data trends when available
-  const generateSparklineData = (base: number, variance: number = 0.1, useRealTrend: boolean = false) => {
-    // When we have historical data, we should replace this with actual trends
-    // For now, generate simulated but consistent data based on the base value
-    const seed = base * 1000; // Use base as seed for consistency
-    return Array.from({ length: 7 }, (_, i) => {
-      const pseudoRandom = Math.sin(seed + i) * 0.5 + 0.5; // Deterministic "random" based on position
-      return {
-        value: base * (1 + (pseudoRandom - 0.5) * variance * 2)
-      };
-    });
-  };
 
   // Generate heatmap data from ALL products - now using real giro_ideal_mes
   const generateHeatmapData = () => {
@@ -316,28 +339,33 @@ const Dashboard = () => {
         );
 
       case 'sparklines':
+        // Get real trend data from snapshots
+        const faturamentoTrend = calculateTrend('faturamento');
+        const margemTrend = calculateTrend('margem');
+        const quebraTrend = calculateTrend('quebra');
+        
         return (
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <SparklineCard 
                 title="Faturamento (7 dias)"
                 value={`R$ ${kpis.faturamento.toLocaleString('pt-BR')}`}
-                data={generateSparklineData(kpis.faturamento)}
-                trend={{ value: 8.2, isPositive: true }}
+                data={getSparklineData('faturamento', kpis.faturamento)}
+                trend={faturamentoTrend}
                 color="primary"
               />
               <SparklineCard 
                 title="Margem (7 dias)"
                 value={`${kpis.margemBruta.toFixed(1)}%`}
-                data={generateSparklineData(kpis.margemBruta, 0.05)}
-                trend={{ value: 2.1, isPositive: false }}
+                data={getSparklineData('margem', kpis.margemBruta)}
+                trend={margemTrend}
                 color="success"
               />
               <SparklineCard 
                 title="Ruptura + Quebra (7 dias)"
                 value={`${(kpis.ruptura + kpis.quebra).toFixed(1)}%`}
-                data={generateSparklineData(kpis.ruptura + kpis.quebra, 0.15)}
-                trend={{ value: 0.5, isPositive: false }}
+                data={getSparklineData('quebra', kpis.ruptura + kpis.quebra)}
+                trend={quebraTrend}
                 color="destructive"
               />
             </div>

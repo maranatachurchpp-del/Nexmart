@@ -39,7 +39,7 @@ serve(async (req) => {
       } catch (validationError) {
         console.error('Validation error:', validationError);
         return new Response(
-          JSON.stringify({ error: 'Invalid request format', details: String(validationError) }),
+          JSON.stringify({ error: 'Invalid request format' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -69,24 +69,106 @@ serve(async (req) => {
 
     console.log('Generating smart alerts for user:', user.id);
 
-    // Get user's business data (mock data for now - você pode substituir por dados reais)
+    // Fetch REAL product data from database
+    const { data: produtos, error: produtosError } = await supabaseClient
+      .from('produtos')
+      .select('*')
+      .order('participacao_faturamento', { ascending: false })
+      .limit(500);
+
+    if (produtosError) {
+      console.error('Error fetching products:', produtosError);
+      throw new Error('Failed to fetch products');
+    }
+
+    // Fetch user profile for company name
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('company_name, name')
+      .eq('user_id', user.id)
+      .single();
+
+    // Calculate real KPIs from product data
+    const productCount = produtos?.length || 0;
+    
+    if (productCount === 0) {
+      return new Response(
+        JSON.stringify({ 
+          alerts: [],
+          business_data: { products_analyzed: 0 },
+          message: 'No products found to analyze'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const totalRevenue = produtos.reduce((sum: number, p: any) => sum + (p.participacao_faturamento || 0) * 1000, 0);
+    const avgMargin = produtos.reduce((sum: number, p: any) => sum + ((p.margem_a_min || 0) + (p.margem_a_max || 0)) / 2, 0) / productCount;
+    const avgRuptura = produtos.reduce((sum: number, p: any) => sum + (p.ruptura_atual || 0), 0) / productCount;
+    const avgQuebra = produtos.reduce((sum: number, p: any) => sum + (p.quebra_atual || 0), 0) / productCount;
+    
+    // Find underperforming products (margin below target)
+    const underperforming = produtos
+      .filter((p: any) => {
+        const currentMargin = ((p.margem_a_min || 0) + (p.margem_a_max || 0)) / 2;
+        const targetMargin = p.margem_a_min || 15;
+        return currentMargin < targetMargin;
+      })
+      .slice(0, 5)
+      .map((p: any) => ({
+        name: p.descricao,
+        margin: ((p.margem_a_min || 0) + (p.margem_a_max || 0)) / 2,
+        target: p.margem_a_min || 15
+      }));
+
+    // Find products with high ruptura
+    const highRuptura = produtos
+      .filter((p: any) => (p.ruptura_atual || 0) > (p.ruptura_esperada || 0) * 1.2)
+      .slice(0, 3);
+
+    // Find products with high quebra
+    const highQuebra = produtos
+      .filter((p: any) => (p.quebra_atual || 0) > (p.quebra_esperada || 0) * 1.2)
+      .slice(0, 3);
+
+    // Get top categories by revenue
+    const categoryRevenue = produtos.reduce((acc: Record<string, number>, p: any) => {
+      const cat = p.departamento || 'Outros';
+      acc[cat] = (acc[cat] || 0) + (p.participacao_faturamento || 0);
+      return acc;
+    }, {});
+    
+    const topCategories = Object.entries(categoryRevenue)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 3)
+      .map(([name]) => name);
+
+    // Build real business data
     const businessData = {
-      company_name: "Supermercado Exemplo",
-      monthly_revenue: 850000,
+      company_name: profile?.company_name || profile?.name || "Sua Empresa",
+      monthly_revenue: totalRevenue,
       target_margin: 18,
-      current_margin: 15.2,
-      products_analyzed: 1250,
-      rupture_rate: 8.5,
-      competitor_price_advantage: -2.3, // negativo = mais caro que concorrentes
-      top_selling_categories: ["Bebidas", "Laticínios", "Padaria"],
-      underperforming_products: [
-        { name: "Refrigerante Marca A 2L", margin: 8, target: 15 },
-        { name: "Queijo Mussarela 500g", margin: 10, target: 18 },
-        { name: "Pão Francês kg", margin: 12, target: 20 }
-      ]
+      current_margin: avgMargin,
+      products_analyzed: productCount,
+      rupture_rate: avgRuptura,
+      quebra_rate: avgQuebra,
+      top_selling_categories: topCategories,
+      underperforming_products: underperforming,
+      high_ruptura_products: highRuptura.map((p: any) => ({
+        name: p.descricao,
+        atual: p.ruptura_atual,
+        esperada: p.ruptura_esperada
+      })),
+      high_quebra_products: highQuebra.map((p: any) => ({
+        name: p.descricao,
+        atual: p.quebra_atual,
+        esperada: p.quebra_esperada
+      }))
     };
 
-    // Call Lovable AI (Gemini Flash - FREE até 06/10)
+    console.log('Business data calculated:', JSON.stringify(businessData, null, 2));
+
+    // Call Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     
     if (!LOVABLE_API_KEY) {
@@ -105,7 +187,7 @@ serve(async (req) => {
           {
             role: 'system',
             content: `Você é um analista especializado em supermercados brasileiros. 
-Analise os dados fornecidos e gere 4-6 alertas acionáveis em português.
+Analise os dados REAIS fornecidos e gere 4-6 alertas acionáveis em português.
 Cada alerta deve ter:
 - title: título curto e impactante (max 60 caracteres)
 - description: descrição clara da oportunidade ou problema (max 150 caracteres)
@@ -128,23 +210,40 @@ Retorne APENAS um JSON válido no formato:
           },
           {
             role: 'user',
-            content: `Analise estes dados e gere alertas inteligentes:
+            content: `Analise estes dados REAIS do negócio e gere alertas inteligentes:
 
 Empresa: ${businessData.company_name}
-Faturamento Mensal: R$ ${businessData.monthly_revenue.toLocaleString('pt-BR')}
-Margem Atual: ${businessData.current_margin}%
+Faturamento Mensal Estimado: R$ ${businessData.monthly_revenue.toLocaleString('pt-BR')}
+Margem Atual Média: ${businessData.current_margin.toFixed(1)}%
 Meta de Margem: ${businessData.target_margin}%
-Taxa de Ruptura: ${businessData.rupture_rate}%
-Vantagem de Preço vs Concorrentes: ${businessData.competitor_price_advantage}%
+Produtos Analisados: ${businessData.products_analyzed}
+Taxa de Ruptura Média: ${businessData.rupture_rate.toFixed(1)}%
+Taxa de Quebra Média: ${businessData.quebra_rate.toFixed(1)}%
 
+Categorias Top por Faturamento: ${businessData.top_selling_categories.join(', ')}
+
+${businessData.underperforming_products.length > 0 ? `
 Produtos com Margem Abaixo da Meta:
 ${businessData.underperforming_products.map(p => 
-  `- ${p.name}: Margem ${p.margin}% (Meta: ${p.target}%)`
+  `- ${p.name}: Margem ${p.margin.toFixed(1)}% (Meta: ${p.target.toFixed(1)}%)`
 ).join('\n')}
+` : ''}
 
-Categorias Top: ${businessData.top_selling_categories.join(', ')}
+${businessData.high_ruptura_products.length > 0 ? `
+Produtos com Alta Ruptura:
+${businessData.high_ruptura_products.map((p: any) => 
+  `- ${p.name}: ${p.atual?.toFixed(1)}% (Esperado: ${p.esperada?.toFixed(1)}%)`
+).join('\n')}
+` : ''}
 
-Gere alertas práticos e acionáveis com base nestes dados.`
+${businessData.high_quebra_products.length > 0 ? `
+Produtos com Alta Quebra:
+${businessData.high_quebra_products.map((p: any) => 
+  `- ${p.name}: ${p.atual?.toFixed(1)}% (Esperado: ${p.esperada?.toFixed(1)}%)`
+).join('\n')}
+` : ''}
+
+Gere alertas práticos e acionáveis baseados nestes dados reais.`
           }
         ],
         temperature: 0.7,
@@ -202,8 +301,7 @@ Gere alertas práticos e acionáveis com base nestes dados.`
     console.error('Error generating smart alerts:', error);
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Internal server error',
-        details: error instanceof Error ? error.stack : undefined
+        error: error instanceof Error ? error.message : 'Internal server error'
       }),
       {
         status: 500,
