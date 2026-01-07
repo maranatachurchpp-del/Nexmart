@@ -7,6 +7,7 @@ import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { useRealtimeMetrics } from '@/hooks/useRealtimeMetrics';
 import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
 import { useProductSnapshots } from '@/hooks/useProductSnapshots';
+import { toast } from '@/hooks/use-toast';
 import { AccessControl } from '@/components/AccessControl';
 import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ import { RealtimeMetricsChart } from '@/components/dashboard/RealtimeMetricsChar
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { PushNotificationToggle } from '@/components/PushNotificationToggle';
 import { GaugeChart, RadialProgressChart, SparklineCard, HeatmapChart } from '@/components/dashboard/ModernCharts';
+import { DataManagementDialog } from '@/components/dashboard/DataManagementDialog';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 
 const Dashboard = () => {
@@ -119,6 +121,35 @@ const Dashboard = () => {
 
   const handleRowClick = (produto: Produto) => {
     console.log('Produto clicado:', produto);
+  };
+
+  // Handle drill-down from charts - filter dashboard by department
+  const handleDepartmentDrillDown = (departamento: string) => {
+    if (departamento) {
+      setFilters(prev => ({
+        ...prev,
+        departamento,
+        categoria: undefined,
+        subcategoria: undefined
+      }));
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        departamento: undefined,
+        categoria: undefined,
+        subcategoria: undefined
+      }));
+    }
+  };
+
+  // Handle drill-down from heatmap
+  const handleHeatmapCellClick = (row: string, column: string, value: number) => {
+    // Filter by department (row)
+    handleDepartmentDrillDown(row);
+    toast({
+      title: `${row} - ${column}`,
+      description: `Valor: ${value.toFixed(1)}% | Dashboard filtrado por departamento`,
+    });
   };
 
   const handleDragEnd = (result: DropResult) => {
@@ -379,7 +410,8 @@ const Dashboard = () => {
             <div className="mb-6">
               <HeatmapChart 
                 data={generateHeatmapData()}
-                title="Performance por Departamento"
+                title="Performance por Departamento (clique para filtrar)"
+                onCellClick={handleHeatmapCellClick}
               />
             </div>
           </DraggableWidget>
@@ -390,7 +422,10 @@ const Dashboard = () => {
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
               <GlassCard className="p-0 overflow-hidden">
-                <RevenueChart />
+                <RevenueChart 
+                  produtos={allProdutos} 
+                  onDepartmentClick={handleDepartmentDrillDown}
+                />
               </GlassCard>
               <GlassCard className="p-0 overflow-hidden">
                 <MarginChart />
@@ -505,7 +540,8 @@ const Dashboard = () => {
                   onToggleVisibility={toggleWidgetVisibility}
                   onReset={resetToDefault}
                 />
-                <ExportMenu produtos={produtos} filters={filters} />
+                <ExportMenu produtos={allProdutos} filters={filters} />
+                <DataManagementDialog onDataCleared={refreshProducts} />
                 <Button variant="outline" size="sm" onClick={() => setImportWizardOpen(true)} className="hover-lift">
                   <Upload className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">Importar</span>
@@ -535,7 +571,7 @@ const Dashboard = () => {
           <TrialBanner />
           
           {/* Filters */}
-          <FilterBar filters={filters} onFiltersChange={setFilters} produtos={produtos} />
+          <FilterBar filters={filters} onFiltersChange={setFilters} produtos={allProdutos} />
 
           {/* Draggable Widgets */}
           <DragDropContext onDragEnd={handleDragEnd}>
