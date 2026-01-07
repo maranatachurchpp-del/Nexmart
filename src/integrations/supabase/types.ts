@@ -256,6 +256,59 @@ export type Database = {
           },
         ]
       }
+      product_snapshots: {
+        Row: {
+          created_at: string | null
+          giro_ideal_mes: number | null
+          id: string
+          marcas_atuais: number | null
+          margem_atual: number | null
+          participacao_faturamento: number | null
+          preco_medio: number | null
+          product_id: string
+          quebra_atual: number | null
+          ruptura_atual: number | null
+          snapshot_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          giro_ideal_mes?: number | null
+          id?: string
+          marcas_atuais?: number | null
+          margem_atual?: number | null
+          participacao_faturamento?: number | null
+          preco_medio?: number | null
+          product_id: string
+          quebra_atual?: number | null
+          ruptura_atual?: number | null
+          snapshot_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          giro_ideal_mes?: number | null
+          id?: string
+          marcas_atuais?: number | null
+          margem_atual?: number | null
+          participacao_faturamento?: number | null
+          preco_medio?: number | null
+          product_id?: string
+          quebra_atual?: number | null
+          ruptura_atual?: number | null
+          snapshot_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_snapshots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       produtos: {
         Row: {
           categoria: string
@@ -636,6 +689,7 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: undefined
       }
+      generate_daily_snapshots: { Args: never; Returns: undefined }
       get_current_user_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
