@@ -173,6 +173,33 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          converted_at: string | null
+          created_at: string | null
+          email: string
+          id: string
+          metadata: Json | null
+          source: string | null
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          metadata?: Json | null
+          source?: string | null
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          metadata?: Json | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -401,6 +428,7 @@ export type Database = {
           annual_revenue: string | null
           company_name: string | null
           created_at: string | null
+          dashboard_layout: Json | null
           experience_level: string | null
           focus_areas: string[] | null
           id: string
@@ -414,6 +442,7 @@ export type Database = {
           annual_revenue?: string | null
           company_name?: string | null
           created_at?: string | null
+          dashboard_layout?: Json | null
           experience_level?: string | null
           focus_areas?: string[] | null
           id?: string
@@ -427,6 +456,7 @@ export type Database = {
           annual_revenue?: string | null
           company_name?: string | null
           created_at?: string | null
+          dashboard_layout?: Json | null
           experience_level?: string | null
           focus_areas?: string[] | null
           id?: string

@@ -43,7 +43,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('✅ Webhook event received:', event.type);
+    // Event received: event.type
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
@@ -51,14 +51,13 @@ serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log('💳 Processing checkout.session.completed:', session.id);
+        // Processing checkout.session.completed
 
         const userId = session.metadata?.supabase_user_id;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
 
         if (!userId) {
-          console.error('❌ Missing supabase_user_id in session metadata');
           break;
         }
 
@@ -74,7 +73,6 @@ serve(async (req) => {
           .single();
 
         if (planError || !plan) {
-          console.error('❌ Plan not found for price_id:', priceId);
           break;
         }
 

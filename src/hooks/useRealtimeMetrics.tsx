@@ -108,8 +108,6 @@ export const useRealtimeMetrics = () => {
           filter: `user_id=eq.${user.id}`
         },
         async (payload) => {
-          console.log('Realtime update received:', payload.eventType);
-          
           // Add to recent changes
           const change: ProductChange = {
             type: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
@@ -132,7 +130,6 @@ export const useRealtimeMetrics = () => {
         }
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
         setIsConnected(status === 'SUBSCRIBED');
       });
 

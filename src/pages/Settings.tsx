@@ -117,10 +117,22 @@ export default function Settings() {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: "Erro",
-        description: "A senha deve ter pelo menos 6 caracteres.",
+        description: "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate password strength
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasNumber = /\d/.test(newPassword);
+    if (!hasUpperCase || !hasNumber) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 8 caracteres, uma letra maiúscula e um número.",
         variant: "destructive",
       });
       return;

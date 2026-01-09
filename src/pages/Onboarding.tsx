@@ -364,13 +364,13 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-primary/10 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl mb-8">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Configuração Inicial
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Passo {currentStep + 1} de {totalSteps}
           </p>
         </div>
