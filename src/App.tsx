@@ -17,6 +17,9 @@ import Reports from "./pages/Reports";
 import Subscription from "./pages/Subscription";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +68,9 @@ const AuthenticatedApp = () => {
           </AdminRoute>
         </ProtectedRoute>
       } />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/auth/reset" element={<ResetPassword />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

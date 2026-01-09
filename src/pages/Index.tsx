@@ -3,16 +3,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BarChart3, TrendingUp, Shield, Zap, CheckCircle, Star, Menu, ArrowRight, PieChart, Target, Users, Building2, Sparkles, Brain, ChartBar, Globe, Database, FileText, Upload, DollarSign, Clock, Award, Quote } from "lucide-react";
+import { BarChart3, TrendingUp, Shield, Zap, CheckCircle, Star, Menu, ArrowRight, PieChart, Target, Users, Building2, Sparkles, Brain, ChartBar, Globe, Database, FileText, Upload, DollarSign, Clock, Award, Quote, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
 const Index = () => {
   const [email, setEmail] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar captura de lead
-    console.log("Email capturado:", email);
+    if (!email.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .insert({
+          email: email.trim().toLowerCase(),
+          source: 'landing_hero',
+          metadata: { page: 'index', timestamp: new Date().toISOString() }
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          toast({
+            title: "Email já cadastrado",
+            description: "Este email já está em nossa lista. Faça login para acessar.",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Sucesso!",
+          description: "Você receberá um email com instruções para começar.",
+        });
+        setEmail("");
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   return <div className="min-h-screen bg-background">
       {/* Header Fixo */}
@@ -107,10 +148,19 @@ const Index = () => {
             animationDelay: '0.6s'
           }}>
               <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 mb-8">
-                <Input type="email" placeholder="seu-email@supermercado.com" value={email} onChange={e => setEmail(e.target.value)} className="h-14 text-lg bg-card/80 backdrop-blur-sm border-2 border-border focus:border-primary transition-all" required />
-                <Button type="submit" size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-success hover:opacity-90 shadow-xl hover-scale">
-                  Experimente Grátis por 7 Dias
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                <Input type="email" placeholder="seu-email@supermercado.com" value={email} onChange={e => setEmail(e.target.value)} className="h-14 text-lg bg-card/80 backdrop-blur-sm border-2 border-border focus:border-primary transition-all" required disabled={isSubmitting} />
+                <Button type="submit" size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-success hover:opacity-90 shadow-xl hover-scale" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      Experimente Grátis por 7 Dias
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
               </form>
 
