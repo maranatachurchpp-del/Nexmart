@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Shield, Zap, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export const HeroSection = () => {
@@ -17,22 +16,37 @@ export const HeroSection = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('leads')
-        .insert({
-          email: email.trim().toLowerCase(),
-          source: 'landing_hero',
-          metadata: { page: 'index', timestamp: new Date().toISOString() }
-        });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/submit-lead`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email.trim().toLowerCase(),
+            source: 'landing_hero',
+            metadata: { page: 'index', timestamp: new Date().toISOString() }
+          })
+        }
+      );
 
-      if (error) {
-        if (error.code === '23505') {
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409 || data.error === 'duplicate') {
           toast({
             title: "Email já cadastrado",
             description: "Este email já está em nossa lista. Faça login para acessar.",
           });
+        } else if (response.status === 429) {
+          toast({
+            title: "Muitas tentativas",
+            description: "Por favor, aguarde um momento antes de tentar novamente.",
+            variant: "destructive",
+          });
         } else {
-          throw error;
+          throw new Error(data.error || 'Request failed');
         }
       } else {
         toast({
