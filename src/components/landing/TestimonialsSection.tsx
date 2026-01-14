@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Star, Quote } from "lucide-react";
+import { ScrollReveal, StaggeredReveal } from "@/hooks/useScrollAnimation";
 
 export const TestimonialsSection = () => {
   const testimonials = [
@@ -26,16 +27,21 @@ export const TestimonialsSection = () => {
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-            O que nossos clientes dizem
-          </h2>
-          <p className="text-lg md:text-xl text-muted-foreground">
-            Resultados reais de supermercados que transformaram sua gestão com o Nexmart.
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+              O que nossos clientes dizem
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground">
+              Resultados reais de supermercados que transformaram sua gestão com o Nexmart.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <StaggeredReveal
+          containerClassName="grid md:grid-cols-3 gap-8"
+          staggerDelay={0.15}
+        >
           {testimonials.map((testimonial) => (
             <Card key={testimonial.name} className="hover:shadow-xl transition-all duration-300 hover-scale">
               <CardHeader>
@@ -62,7 +68,7 @@ export const TestimonialsSection = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </StaggeredReveal>
       </div>
     </section>
   );

@@ -1,4 +1,5 @@
 import { DollarSign, Shield, Brain, Clock, Users, TrendingUp } from "lucide-react";
+import { ScrollReveal, StaggeredReveal } from "@/hooks/useScrollAnimation";
 
 export const BenefitsSection = () => {
   const benefits = [
@@ -49,16 +50,21 @@ export const BenefitsSection = () => {
   return (
     <section id="beneficios" className="py-20 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-            Por que o Nexmart é ideal para o seu negócio?
-          </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-            Descubra os benefícios exclusivos que fazem do Nexmart a escolha certa para supermercados que querem crescer.
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+              Por que o Nexmart é ideal para o seu negócio?
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
+              Descubra os benefícios exclusivos que fazem do Nexmart a escolha certa para supermercados que querem crescer.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <StaggeredReveal
+          containerClassName="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          staggerDelay={0.1}
+        >
           {benefits.map((benefit) => (
             <div key={benefit.title} className="flex items-start space-x-4 p-6 rounded-xl bg-card/40 hover:bg-card/60 transition-all duration-300 hover-scale">
               <div className={`flex-shrink-0 w-12 h-12 bg-gradient-to-br ${benefit.gradient} rounded-xl flex items-center justify-center`}>
@@ -70,7 +76,7 @@ export const BenefitsSection = () => {
               </div>
             </div>
           ))}
-        </div>
+        </StaggeredReveal>
       </div>
     </section>
   );
