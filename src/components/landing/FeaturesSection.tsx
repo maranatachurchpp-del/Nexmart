@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Database, FileText, Upload } from "lucide-react";
+import { ScrollReveal, StaggeredReveal } from "@/hooks/useScrollAnimation";
 
 export const FeaturesSection = () => {
   const features = [
@@ -36,17 +37,22 @@ export const FeaturesSection = () => {
   return (
     <section id="solucao" className="py-20 bg-card/20">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-            Transforme Dados em Lucro
-          </h2>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            O Nexmart resolve os principais desafios do dia a dia do seu supermercado com uma plataforma 
-            inteligente que organiza, analisa e otimiza sua operação mercadológica.
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+              Transforme Dados em Lucro
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              O Nexmart resolve os principais desafios do dia a dia do seu supermercado com uma plataforma 
+              inteligente que organiza, analisa e otimiza sua operação mercadológica.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <StaggeredReveal
+          containerClassName="grid md:grid-cols-2 lg:grid-cols-4 gap-8"
+          staggerDelay={0.15}
+        >
           {features.map((feature) => (
             <Card key={feature.title} className="text-center hover:shadow-xl transition-all duration-300 group hover-scale border-border/50">
               <CardHeader>
@@ -62,7 +68,7 @@ export const FeaturesSection = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </StaggeredReveal>
       </div>
     </section>
   );

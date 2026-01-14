@@ -1,4 +1,5 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ScrollReveal } from "@/hooks/useScrollAnimation";
 
 export const FAQSection = () => {
   const faqs = [
@@ -27,29 +28,33 @@ export const FAQSection = () => {
   return (
     <section className="py-20 bg-card/20">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
-            Perguntas Frequentes
-          </h2>
-          <p className="text-lg md:text-xl text-muted-foreground">
-            Tire suas dúvidas sobre o Nexmart e como ele pode transformar seu supermercado.
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-6">
+              Perguntas Frequentes
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground">
+              Tire suas dúvidas sobre o Nexmart e como ele pode transformar seu supermercado.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="max-w-4xl mx-auto">
-          <Accordion type="single" collapsible className="space-y-4">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index + 1}`} className="border rounded-lg px-6">
-                <AccordionTrigger className="text-left font-semibold">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pt-4">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
+        <ScrollReveal delay={0.2}>
+          <div className="max-w-4xl mx-auto">
+            <Accordion type="single" collapsible className="space-y-4">
+              {faqs.map((faq, index) => (
+                <AccordionItem key={index} value={`item-${index + 1}`} className="border rounded-lg px-6">
+                  <AccordionTrigger className="text-left font-semibold">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground pt-4">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </ScrollReveal>
       </div>
     </section>
   );

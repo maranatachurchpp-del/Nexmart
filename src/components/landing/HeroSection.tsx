@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Shield, Zap, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollReveal } from "@/hooks/useScrollAnimation";
 
 export const HeroSection = () => {
   const [email, setEmail] = useState("");
@@ -74,83 +75,93 @@ export const HeroSection = () => {
       <div className="absolute bottom-10 left-10 w-96 h-96 bg-success/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       
       <div className="relative container mx-auto px-4 text-center">
-        <div className="mb-8 animate-fade-in">
-          <Badge variant="secondary" className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-primary/20 to-success/20 border border-primary/30">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Revolucione sua gestão mercadológica
-          </Badge>
-        </div>
+        <ScrollReveal>
+          <div className="mb-8">
+            <Badge variant="secondary" className="px-6 py-3 text-sm font-semibold bg-gradient-to-r from-primary/20 to-success/20 border border-primary/30">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Revolucione sua gestão mercadológica
+            </Badge>
+          </div>
+        </ScrollReveal>
         
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-8 leading-tight tracking-tight animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          Nexmart: O Próximo Nível da<br />
-          <span className="bg-gradient-to-r from-primary via-success to-primary bg-clip-text text-transparent">
-            Gestão Mercadológica
-          </span>
-        </h1>
+        <ScrollReveal delay={0.1}>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-foreground mb-8 leading-tight tracking-tight">
+            Nexmart: O Próximo Nível da<br />
+            <span className="bg-gradient-to-r from-primary via-success to-primary bg-clip-text text-transparent">
+              Gestão Mercadológica
+            </span>
+          </h1>
+        </ScrollReveal>
         
-        <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          Organize sua estrutura, otimize suas margens e impulsione o lucro do seu supermercado<br />
-          com <strong className="text-foreground">inteligência e simplicidade</strong>.
-        </p>
+        <ScrollReveal delay={0.2}>
+          <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed">
+            Organize sua estrutura, otimize suas margens e impulsione o lucro do seu supermercado<br />
+            com <strong className="text-foreground">inteligência e simplicidade</strong>.
+          </p>
+        </ScrollReveal>
 
         {/* CTA Principal */}
-        <div className="max-w-lg mx-auto mb-16 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-          <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 mb-8">
-            <Input 
-              type="email" 
-              placeholder="seu-email@supermercado.com" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              className="h-14 text-lg bg-card/80 backdrop-blur-sm border-2 border-border focus:border-primary transition-all" 
-              required 
-              disabled={isSubmitting} 
-            />
-            <Button type="submit" size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-success hover:opacity-90 shadow-xl hover-scale" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  Experimente Grátis por 7 Dias
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </>
-              )}
-            </Button>
-          </form>
+        <ScrollReveal delay={0.3}>
+          <div className="max-w-lg mx-auto mb-16">
+            <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 mb-8">
+              <Input 
+                type="email" 
+                placeholder="seu-email@supermercado.com" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className="h-14 text-lg bg-card/80 backdrop-blur-sm border-2 border-border focus:border-primary transition-all" 
+                required 
+                disabled={isSubmitting} 
+              />
+              <Button type="submit" size="lg" className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-success hover:opacity-90 shadow-xl hover-scale" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    Experimente Grátis por 7 Dias
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
+              </Button>
+            </form>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-success" />
-              Teste gratuito de 7 dias
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-success" />
-              Sem compromisso
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-success" />
-              Configuração rápida
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-success" />
+                Teste gratuito de 7 dias
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-success" />
+                Sem compromisso
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-success" />
+                Configuração rápida
+              </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Social Proof */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.8s' }}>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">1000+</div>
-            <div className="text-sm text-muted-foreground">Supermercados</div>
+        <ScrollReveal delay={0.4}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto">
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">1000+</div>
+              <div className="text-sm text-muted-foreground">Supermercados</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">25%</div>
+              <div className="text-sm text-muted-foreground">Aumento médio na margem</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">4.9★</div>
+              <div className="text-sm text-muted-foreground">Avaliação dos clientes</div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">25%</div>
-            <div className="text-sm text-muted-foreground">Aumento médio na margem</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-success bg-clip-text text-transparent mb-2">4.9★</div>
-            <div className="text-sm text-muted-foreground">Avaliação dos clientes</div>
-          </div>
-        </div>
+        </ScrollReveal>
       </div>
     </section>
   );
