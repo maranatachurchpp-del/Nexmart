@@ -49,10 +49,11 @@ const transformProduct = (item: any): Produto => ({
   id: item.id
 });
 
-export const useProducts = () => {
+export const useProducts = (initialFilters?: ProductFilters) => {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [allProdutos, setAllProdutos] = useState<Produto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentFilters, setCurrentFilters] = useState<ProductFilters | undefined>(initialFilters);
   const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
     pageSize: 25,
@@ -161,12 +162,12 @@ export const useProducts = () => {
     }
   }, []);
 
-  // Initial load
+  // Initial load - apply saved filters
   useEffect(() => {
     const loadData = async () => {
       await Promise.all([
         fetchAllProducts(),
-        fetchPaginatedProducts(1, pagination.pageSize)
+        fetchPaginatedProducts(1, pagination.pageSize, initialFilters)
       ]);
     };
     
@@ -184,7 +185,7 @@ export const useProducts = () => {
         },
         () => {
           fetchAllProducts();
-          fetchPaginatedProducts(pagination.page, pagination.pageSize);
+          fetchPaginatedProducts(pagination.page, pagination.pageSize, currentFilters);
         }
       )
       .subscribe();
@@ -195,12 +196,22 @@ export const useProducts = () => {
   }, []);
 
   const setPage = (page: number) => {
-    fetchPaginatedProducts(page, pagination.pageSize);
+    fetchPaginatedProducts(page, pagination.pageSize, currentFilters);
   };
 
   const setPageSize = (pageSize: number) => {
-    fetchPaginatedProducts(1, pageSize);
+    fetchPaginatedProducts(1, pageSize, currentFilters);
   };
+
+  // Update current filters when fetching
+  const fetchWithFilters = useCallback(async (
+    page: number = 1,
+    pageSize: number = 25,
+    filters?: ProductFilters
+  ) => {
+    setCurrentFilters(filters);
+    return fetchPaginatedProducts(page, pageSize, filters);
+  }, [fetchPaginatedProducts]);
 
   const saveProduct = async (produto: Produto) => {
     try {
@@ -343,14 +354,14 @@ export const useProducts = () => {
     pagination,
     setPage,
     setPageSize,
-    fetchPaginatedProducts,
+    fetchPaginatedProducts: fetchWithFilters,
     saveProduct,
     deleteProduct,
     bulkUpdateProducts,
     bulkDeleteProducts,
     refreshProducts: () => {
       fetchAllProducts();
-      fetchPaginatedProducts(pagination.page, pagination.pageSize);
+      fetchPaginatedProducts(pagination.page, pagination.pageSize, currentFilters);
     }
   };
 };
