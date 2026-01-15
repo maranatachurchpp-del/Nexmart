@@ -44,25 +44,6 @@ import { DashboardFilters, Produto } from '@/types/mercadologico';
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRoles();
-  const { 
-    produtos, 
-    allProdutos,
-    isLoading, 
-    refreshProducts, 
-    bulkUpdateProducts, 
-    bulkDeleteProducts,
-    pagination,
-    setPage,
-    setPageSize,
-    fetchPaginatedProducts
-  } = useProducts();
-  const { createLog } = useAuditLogs();
-  const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
-  const { widgets, reorderWidgets, toggleWidgetVisibility, resetToDefault } = useDashboardWidgets();
-  const { getSparklineData, calculateTrend } = useProductSnapshots();
-  const navigate = useNavigate();
-  const [importWizardOpen, setImportWizardOpen] = useState(false);
-  const [tableFilters, setTableFilters] = useState<{ search?: string; sortField?: string; sortDirection?: 'asc' | 'desc' }>({});
   
   // Initialize filters from localStorage or default
   const [filters, setFilters] = useState<DashboardFilters>(() => {
@@ -79,7 +60,7 @@ const Dashboard = () => {
         };
       }
     } catch (e) {
-      console.warn('Failed to load saved filters:', e);
+      // Silently fail on parse error
     }
     return {
       periodo: {
@@ -89,6 +70,35 @@ const Dashboard = () => {
       kvi: 'todos'
     };
   });
+
+  // Get initial filters for useProducts hook
+  const initialProductFilters = {
+    departamento: filters.departamento,
+    categoria: filters.categoria,
+    subcategoria: filters.subcategoria,
+    kvi: filters.kvi as 'todos' | 'sim' | 'nao'
+  };
+
+  const { 
+    produtos, 
+    allProdutos,
+    isLoading, 
+    refreshProducts, 
+    bulkUpdateProducts, 
+    bulkDeleteProducts,
+    pagination,
+    setPage,
+    setPageSize,
+    fetchPaginatedProducts
+  } = useProducts(initialProductFilters);
+  
+  const { createLog } = useAuditLogs();
+  const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
+  const { widgets, reorderWidgets, toggleWidgetVisibility, resetToDefault } = useDashboardWidgets();
+  const { getSparklineData, calculateTrend } = useProductSnapshots();
+  const navigate = useNavigate();
+  const [importWizardOpen, setImportWizardOpen] = useState(false);
+  const [tableFilters, setTableFilters] = useState<{ search?: string; sortField?: string; sortDirection?: 'asc' | 'desc' }>({});
 
   // Persist filters to localStorage
   useEffect(() => {
@@ -120,7 +130,7 @@ const Dashboard = () => {
   };
 
   const handleRowClick = (produto: Produto) => {
-    console.log('Produto clicado:', produto);
+    // Row click handler - could be extended to show detail modal
   };
 
   // Handle drill-down from charts - filter dashboard by department
