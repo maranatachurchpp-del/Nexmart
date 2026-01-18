@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { parseCsvFileToJson, parseXlsxFileToJson } from '@/lib/exceljs-utils';
 
 interface CSVRow {
   codigo: string;
@@ -42,29 +42,56 @@ const csvRowSchema = z.object({
   quebra_atual: z.number().min(0, 'Quebra atual deve ser >= 0').optional(),
   margem_a_min: z.number().min(0, 'Margem mínima deve ser >= 0').optional(),
   margem_a_max: z.number().min(0, 'Margem máxima deve ser >= 0').optional(),
-  marcas_min: z.number().int('Marcas mínimas deve ser um número inteiro').min(0, 'Marcas mínimas deve ser >= 0').optional(),
-  marcas_max: z.number().int('Marcas máximas deve ser um número inteiro').min(0, 'Marcas máximas deve ser >= 0').optional(),
-  marcas_atuais: z.number().int('Marcas atuais deve ser um número inteiro').min(0, 'Marcas atuais deve ser >= 0').optional(),
-  giro_ideal_mes: z.number().int('Giro ideal/mês deve ser um número inteiro').min(0, 'Giro ideal/mês deve ser >= 0').optional(),
-  participacao_faturamento: z.number().min(0, 'Participação deve ser >= 0').max(100, 'Participação deve ser <= 100').optional(),
+  marcas_min: z
+    .number()
+    .int('Marcas mínimas deve ser um número inteiro')
+    .min(0, 'Marcas mínimas deve ser >= 0')
+    .optional(),
+  marcas_max: z
+    .number()
+    .int('Marcas máximas deve ser um número inteiro')
+    .min(0, 'Marcas máximas deve ser >= 0')
+    .optional(),
+  marcas_atuais: z
+    .number()
+    .int('Marcas atuais deve ser um número inteiro')
+    .min(0, 'Marcas atuais deve ser >= 0')
+    .optional(),
+  giro_ideal_mes: z
+    .number()
+    .int('Giro ideal/mês deve ser um número inteiro')
+    .min(0, 'Giro ideal/mês deve ser >= 0')
+    .optional(),
+  participacao_faturamento: z
+    .number()
+    .min(0, 'Participação deve ser >= 0')
+    .max(100, 'Participação deve ser <= 100')
+    .optional(),
   preco_medio_min: z.number().min(0, 'Preço médio mínimo deve ser >= 0').optional(),
   preco_medio_max: z.number().min(0, 'Preço médio máximo deve ser >= 0').optional(),
-  classificacao_kvi: z.enum(['Alta', 'Média', 'Baixa'], { 
-    errorMap: () => ({ message: 'Classificação KVI deve ser: Alta, Média ou Baixa' }) 
-  }).optional(),
-  status: z.enum(['success', 'warning', 'destructive'], { 
-    errorMap: () => ({ message: 'Status deve ser: success, warning ou destructive' }) 
-  }).optional(),
-}).refine(
-  (data) => !data.margem_a_max || !data.margem_a_min || data.margem_a_max >= data.margem_a_min,
-  { message: 'Margem máxima deve ser maior ou igual à margem mínima', path: ['margem_a_max'] }
-).refine(
-  (data) => !data.marcas_max || !data.marcas_min || data.marcas_max >= data.marcas_min,
-  { message: 'Marcas máximas devem ser maior ou igual às marcas mínimas', path: ['marcas_max'] }
-).refine(
-  (data) => !data.preco_medio_max || !data.preco_medio_min || data.preco_medio_max >= data.preco_medio_min,
-  { message: 'Preço médio máximo deve ser maior ou igual ao preço médio mínimo', path: ['preco_medio_max'] }
-);
+  classificacao_kvi: z
+    .enum(['Alta', 'Média', 'Baixa'], {
+      errorMap: () => ({ message: 'Classificação KVI deve ser: Alta, Média ou Baixa' }),
+    })
+    .optional(),
+  status: z
+    .enum(['success', 'warning', 'destructive'], {
+      errorMap: () => ({ message: 'Status deve ser: success, warning ou destructive' }),
+    })
+    .optional(),
+})
+  .refine((data) => !data.margem_a_max || !data.margem_a_min || data.margem_a_max >= data.margem_a_min, {
+    message: 'Margem máxima deve ser maior ou igual à margem mínima',
+    path: ['margem_a_max'],
+  })
+  .refine((data) => !data.marcas_max || !data.marcas_min || data.marcas_max >= data.marcas_min, {
+    message: 'Marcas máximas devem ser maior ou igual às marcas mínimas',
+    path: ['marcas_max'],
+  })
+  .refine((data) => !data.preco_medio_max || !data.preco_medio_min || data.preco_medio_max >= data.preco_medio_min, {
+    message: 'Preço médio máximo deve ser maior ou igual ao preço médio mínimo',
+    path: ['preco_medio_max'],
+  });
 
 export const useCSVImport = () => {
   const [isImporting, setIsImporting] = useState(false);
@@ -73,42 +100,34 @@ export const useCSVImport = () => {
   const [processedRows, setProcessedRows] = useState(0);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
-  const parseCSV = (file: File): Promise<CSVRow[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: 'binary' });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-          
-          // Normalize column names (remove spaces, lowercase, etc.)
-          const normalizedData = jsonData.map((row: any) => {
-            const normalized: any = {};
-            Object.keys(row).forEach(key => {
-              const normalizedKey = key
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '') // Remove accents
-                .replace(/\s+/g, '_')
-                .replace(/[^a-z0-9_]/g, '');
-              normalized[normalizedKey] = row[key];
-            });
-            return normalized;
-          });
+  const normalizeRows = (jsonData: any[]): CSVRow[] => {
+    return jsonData.map((row: any) => {
+      const normalized: any = {};
+      Object.keys(row).forEach((key) => {
+        const normalizedKey = key
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove accents
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '');
+        normalized[normalizedKey] = row[key];
+      });
+      return normalized;
+    }) as CSVRow[];
+  };
 
-          resolve(normalizedData as CSVRow[]);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      reader.onerror = (error) => reject(error);
-      reader.readAsBinaryString(file);
-    });
+  const parseFile = async (file: File): Promise<CSVRow[]> => {
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    let jsonData: any[] = [];
+    if (extension === 'xlsx') {
+      jsonData = await parseXlsxFileToJson(file);
+    } else {
+      // treat as CSV
+      jsonData = await parseCsvFileToJson(file);
+    }
+
+    return normalizeRows(jsonData);
   };
 
   const validateRow = (row: any, rowIndex: number): ValidationError[] => {
@@ -153,8 +172,8 @@ export const useCSVImport = () => {
     setValidationErrors([]);
 
     try {
-      // Parse CSV
-      const rows = await parseCSV(file);
+      // Parse file (CSV or XLSX)
+      const rows = await parseFile(file);
       setTotalRows(rows.length);
 
       if (rows.length === 0) {
