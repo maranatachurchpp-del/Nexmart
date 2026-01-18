@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { parseXlsxFileToJson, downloadWorkbook } from '@/lib/exceljs-utils';
 
 interface ColumnMapping {
   sourceColumn: string;
@@ -207,11 +208,14 @@ export const useSmartCSVImport = () => {
   const parseFile = async (file: File): Promise<any[]> => {
     const extension = file.name.split('.').pop()?.toLowerCase();
     
-    if (['xlsx', 'xls'].includes(extension || '')) {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      return XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+    if (extension === 'xlsx') {
+      // Use ExcelJS-based parser
+      return parseXlsxFileToJson(file);
+    }
+    
+    // Note: .xls (legacy Excel) is not supported by exceljs; treat as CSV or show error
+    if (extension === 'xls') {
+      throw new Error('Formato .xls (Excel antigo) não suportado. Por favor, salve como .xlsx ou .csv.');
     }
     
     await detectEncoding(file);
@@ -638,9 +642,9 @@ export const useSmartCSVImport = () => {
     }
   }, []);
 
-  const generateTemplate = useCallback(() => {
+  const generateTemplate = useCallback(async () => {
     const headers = TARGET_COLUMNS.map(c => c.name);
-    const sampleRow = {
+    const sampleRow: Record<string, any> = {
       codigo: 'PROD001',
       descricao: 'Produto Exemplo',
       departamento: 'Alimentos',
@@ -663,10 +667,12 @@ export const useSmartCSVImport = () => {
       status: 'success',
     };
 
-    const ws = XLSX.utils.json_to_sheet([sampleRow], { header: headers });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
-    XLSX.writeFile(wb, 'template_produtos.xlsx');
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Produtos');
+    ws.columns = headers.map((h) => ({ header: h, key: h, width: 18 }));
+    ws.addRow(sampleRow);
+
+    await downloadWorkbook(wb, 'template_produtos.xlsx');
 
     toast({
       title: 'Template gerado!',
