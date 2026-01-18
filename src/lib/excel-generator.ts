@@ -1,22 +1,26 @@
-import * as XLSX from 'xlsx';
-import { Produto, DashboardFilters } from '@/types/mercadologico';
+import ExcelJS from "exceljs";
+import { Produto, DashboardFilters } from "@/types/mercadologico";
+import { downloadWorkbook } from "@/lib/exceljs-utils";
+
+const setColumnWidths = (worksheet: ExcelJS.Worksheet, widths: number[]) => {
+  worksheet.columns = widths.map((w) => ({ width: w }));
+};
 
 export const generateExcelReport = async (produtos: Produto[], filters: DashboardFilters) => {
   // Filtrar produtos com base nos filtros
-  const filteredProducts = produtos.filter(produto => {
+  const filteredProducts = produtos.filter((produto) => {
     if (filters.departamento && produto.departamento !== filters.departamento) return false;
     if (filters.categoria && produto.categoria !== filters.categoria) return false;
     if (filters.subcategoria && produto.subcategoria !== filters.subcategoria) return false;
-    if (filters.kvi !== 'todos') {
-      const isKvi = produto.classificacaoKVI === 'Alta';
-      if (filters.kvi === 'sim' && !isKvi) return false;
-      if (filters.kvi === 'nao' && isKvi) return false;
+    if (filters.kvi !== "todos") {
+      const isKvi = produto.classificacaoKVI === "Alta";
+      if (filters.kvi === "sim" && !isKvi) return false;
+      if (filters.kvi === "nao" && isKvi) return false;
     }
     return true;
   });
 
-  // Preparar dados para Excel
-  const excelData = filteredProducts.map(produto => {
+  const excelData = filteredProducts.map((produto) => {
     const margemAtual = produto.margemAtual || 0;
     const margemMeta = 18; // Meta padrão
     const quebraAtual = produto.quebraAtual || 0;
@@ -26,156 +30,163 @@ export const generateExcelReport = async (produtos: Produto[], filters: Dashboar
     const marcasMax = produto.marcasMax || 5;
 
     // Calcular status
-    let status = 'OK';
+    let status = "OK";
     if (margemAtual < margemMeta - 1 || quebraAtual > quebraMeta + 1 || marcasAtuais < marcasMin) {
-      status = 'Crítico';
+      status = "Crítico";
     } else if (margemAtual < margemMeta || quebraAtual > quebraMeta || marcasAtuais > marcasMax) {
-      status = 'Atenção';
+      status = "Atenção";
     }
 
+    const precoMedio =
+      ((produto.precoMedioReferencia?.min || 0) + (produto.precoMedioReferencia?.max || 0)) / 2;
+
     return {
-      'Departamento': produto.departamento,
-      'Categoria': produto.categoria,
-      'Subcategoria': produto.subcategoria,
-      'Produto': produto.descricao,
-      'Código': produto.codigo,
-      'KVI': produto.classificacaoKVI === 'Alta' ? 'Sim' : 'Não',
-      'Receita (R$)': (produto.participacaoFaturamento || 0) * 1000,
-      'Margem Atual (%)': margemAtual,
-      'Margem Meta (%)': margemMeta,
-      'Quebra Atual (%)': quebraAtual,
-      'Quebra Meta (%)': quebraMeta,
-      'Preço Médio (R$)': (produto.precoMedioReferencia?.min || 0 + produto.precoMedioReferencia?.max || 0) / 2,
-      'Marcas Atuais': marcasAtuais,
-      'Marcas Min': marcasMin,
-      'Marcas Max': marcasMax,
-      'Giro Ideal (dias)': produto.giroIdealMes || 30,
-      'Status': status,
-      'Participação Receita (%)': produto.participacaoFaturamento || 0
+      "Departamento": produto.departamento,
+      "Categoria": produto.categoria,
+      "Subcategoria": produto.subcategoria,
+      "Produto": produto.descricao,
+      "Código": produto.codigo,
+      "KVI": produto.classificacaoKVI === "Alta" ? "Sim" : "Não",
+      "Receita (R$)": (produto.participacaoFaturamento || 0) * 1000,
+      "Margem Atual (%)": margemAtual,
+      "Margem Meta (%)": margemMeta,
+      "Quebra Atual (%)": quebraAtual,
+      "Quebra Meta (%)": quebraMeta,
+      "Preço Médio (R$)": precoMedio,
+      "Marcas Atuais": marcasAtuais,
+      "Marcas Min": marcasMin,
+      "Marcas Max": marcasMax,
+      "Giro Ideal (dias)": produto.giroIdealMes || 30,
+      "Status": status,
+      "Participação Receita (%)": produto.participacaoFaturamento || 0,
     };
   });
 
-  // Criar workbook
-  const wb = XLSX.utils.book_new();
-  
-  // Aba principal com dados
-  const ws = XLSX.utils.json_to_sheet(excelData);
-  
-  // Definir largura das colunas
-  const colWidths = [
-    { wch: 15 }, // Departamento
-    { wch: 15 }, // Categoria
-    { wch: 15 }, // Subcategoria
-    { wch: 30 }, // Produto
-    { wch: 12 }, // Código
-    { wch: 8 },  // KVI
-    { wch: 12 }, // Receita
-    { wch: 12 }, // Margem Atual
-    { wch: 12 }, // Margem Meta
-    { wch: 12 }, // Quebra Atual
-    { wch: 12 }, // Quebra Meta
-    { wch: 12 }, // Preço Médio
-    { wch: 12 }, // Marcas Atuais
-    { wch: 10 }, // Marcas Min
-    { wch: 10 }, // Marcas Max
-    { wch: 12 }, // Giro Ideal
-    { wch: 10 }, // Status
-    { wch: 15 }  // Participação
-  ];
-  ws['!cols'] = colWidths;
+  const wb = new ExcelJS.Workbook();
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Relatório Analítico');
+  // Aba principal com dados
+  const ws = wb.addWorksheet("Relatório Analítico");
+  if (excelData.length > 0) {
+    ws.columns = Object.keys(excelData[0]).map((key) => ({ header: key, key }));
+    ws.addRows(excelData as any);
+  }
+
+  setColumnWidths(ws, [
+    15, // Departamento
+    15, // Categoria
+    15, // Subcategoria
+    30, // Produto
+    12, // Código
+    8, // KVI
+    14, // Receita
+    14, // Margem Atual
+    14, // Margem Meta
+    14, // Quebra Atual
+    14, // Quebra Meta
+    14, // Preço Médio
+    14, // Marcas Atuais
+    12, // Marcas Min
+    12, // Marcas Max
+    14, // Giro Ideal
+    12, // Status
+    18, // Participação
+  ]);
 
   // Aba de resumo
-  const resumoData = [
-    ['Métrica', 'Valor'],
-    ['Total de Produtos', filteredProducts.length],
-    ['Receita Total (R$)', filteredProducts.reduce((sum, p) => sum + (p.participacaoFaturamento || 0), 0) * 1000],
-    ['Margem Média (%)', filteredProducts.reduce((sum, p) => sum + (p.margemAtual || 0), 0) / filteredProducts.length],
-    ['Quebra Média (%)', filteredProducts.reduce((sum, p) => sum + (p.quebraAtual || 0), 0) / filteredProducts.length],
-    ['Produtos KVI', filteredProducts.filter(p => p.classificacaoKVI === 'Alta').length],
-    ['Produtos OK', excelData.filter(p => p.Status === 'OK').length],
-    ['Produtos Atenção', excelData.filter(p => p.Status === 'Atenção').length],
-    ['Produtos Críticos', excelData.filter(p => p.Status === 'Crítico').length]
+  const resumoWs = wb.addWorksheet("Resumo");
+  const receitaTotal = filteredProducts.reduce((sum, p) => sum + (p.participacaoFaturamento || 0), 0) * 1000;
+  const margemMedia =
+    filteredProducts.length > 0
+      ? filteredProducts.reduce((sum, p) => sum + (p.margemAtual || 0), 0) / filteredProducts.length
+      : 0;
+  const quebraMedia =
+    filteredProducts.length > 0
+      ? filteredProducts.reduce((sum, p) => sum + (p.quebraAtual || 0), 0) / filteredProducts.length
+      : 0;
+
+  const resumoData: Array<[string, string | number]> = [
+    ["Métrica", "Valor"],
+    ["Total de Produtos", filteredProducts.length],
+    ["Receita Total (R$)", receitaTotal],
+    ["Margem Média (%)", margemMedia],
+    ["Quebra Média (%)", quebraMedia],
+    ["Produtos KVI", filteredProducts.filter((p) => p.classificacaoKVI === "Alta").length],
+    ["Produtos OK", excelData.filter((p) => p["Status"] === "OK").length],
+    ["Produtos Atenção", excelData.filter((p) => p["Status"] === "Atenção").length],
+    ["Produtos Críticos", excelData.filter((p) => p["Status"] === "Crítico").length],
   ];
 
-  const wsResumo = XLSX.utils.aoa_to_sheet(resumoData);
-  wsResumo['!cols'] = [{ wch: 20 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo');
+  resumoWs.addRows(resumoData);
+  setColumnWidths(resumoWs, [24, 18]);
 
-  // Download
-  const currentDate = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `relatorio-analitico-${currentDate}.xlsx`);
+  const currentDate = new Date().toISOString().split("T")[0];
+  await downloadWorkbook(wb, `relatorio-analitico-${currentDate}.xlsx`);
 };
 
 export const generateStandardTemplate = async (produtos: Produto[]) => {
-  // Preparar template com estrutura padrão
-  const templateData = produtos.map(produto => ({
-    'Departamento': produto.departamento,
-    'Categoria': produto.categoria,
-    'Subcategoria': produto.subcategoria,
-    'Produto': produto.descricao,
-    'Código': produto.codigo,
-    'Receita (R$)': (produto.participacaoFaturamento || 0) * 1000,
-    'Margem (%)': produto.margemAtual || 0,
-    '% Quebra': produto.quebraAtual || 0,
-    'Qtde Marcas Atual': produto.marcasAtuais || 0,
-    'Qtde Marcas Min': produto.marcasMin || 2,
-    'Qtde Marcas Max': produto.marcasMax || 5,
-    'Preço Médio Real': ((produto.precoMedioReferencia?.min || 0) + (produto.precoMedioReferencia?.max || 0)) / 2,
-    'Preço Referência Min': produto.precoMedioReferencia?.min || 0,
-    'Preço Referência Max': produto.precoMedioReferencia?.max || 0,
-    'Giro Ideal (dias)': produto.giroIdealMes || 30,
-    'KVI': produto.classificacaoKVI === 'Alta' ? 'Sim' : 'Não',
-    'Margem A Min (%)': produto.margemA?.min || 15,
-    'Margem A Max (%)': produto.margemA?.max || 20,
-    'Margem B Min (%)': produto.margemB?.min || 12,
-    'Margem B Max (%)': produto.margemB?.max || 18,
-    'Margem C Min (%)': produto.margemC?.min || 8,
-    'Margem C Max (%)': produto.margemC?.max || 15,
-    'Quebra Esperada (%)': produto.quebraEsperada || 2,
-    'Participação Faturamento (%)': produto.participacaoFaturamento || 0
+  const templateData = produtos.map((produto) => ({
+    "Departamento": produto.departamento,
+    "Categoria": produto.categoria,
+    "Subcategoria": produto.subcategoria,
+    "Produto": produto.descricao,
+    "Código": produto.codigo,
+    "Receita (R$)": (produto.participacaoFaturamento || 0) * 1000,
+    "Margem (%)": produto.margemAtual || 0,
+    "% Quebra": produto.quebraAtual || 0,
+    "Qtde Marcas Atual": produto.marcasAtuais || 0,
+    "Qtde Marcas Min": produto.marcasMin || 2,
+    "Qtde Marcas Max": produto.marcasMax || 5,
+    "Preço Médio Real": ((produto.precoMedioReferencia?.min || 0) + (produto.precoMedioReferencia?.max || 0)) / 2,
+    "Preço Referência Min": produto.precoMedioReferencia?.min || 0,
+    "Preço Referência Max": produto.precoMedioReferencia?.max || 0,
+    "Giro Ideal (dias)": produto.giroIdealMes || 30,
+    "KVI": produto.classificacaoKVI === "Alta" ? "Sim" : "Não",
+    "Margem A Min (%)": produto.margemA?.min || 15,
+    "Margem A Max (%)": produto.margemA?.max || 20,
+    "Margem B Min (%)": produto.margemB?.min || 12,
+    "Margem B Max (%)": produto.margemB?.max || 18,
+    "Margem C Min (%)": produto.margemC?.min || 8,
+    "Margem C Max (%)": produto.margemC?.max || 15,
+    "Quebra Esperada (%)": produto.quebraEsperada || 2,
+    "Participação Faturamento (%)": produto.participacaoFaturamento || 0,
   }));
 
-  // Criar workbook
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(templateData);
+  const wb = new ExcelJS.Workbook();
 
-  // Definir largura das colunas
-  const colWidths = Array(24).fill({ wch: 15 });
-  ws['!cols'] = colWidths;
+  const ws = wb.addWorksheet("Estrutura Mercadológica");
+  if (templateData.length > 0) {
+    ws.columns = Object.keys(templateData[0]).map((key) => ({ header: key, key }));
+    ws.addRows(templateData as any);
+  }
+  // Previously all columns were width 15 (24 columns)
+  setColumnWidths(ws, Array(24).fill(15));
 
-  XLSX.utils.book_append_sheet(wb, ws, 'Estrutura Mercadológica');
-
-  // Aba de instruções
-  const instrucoes = [
-    ['Instruções de Uso da Planilha Padrão'],
-    [''],
-    ['Esta planilha contém a estrutura mercadológica completa do seu supermercado.'],
-    ['Você pode editar os dados e reimportar no sistema.'],
-    [''],
-    ['Campos Principais:'],
-    ['- Departamento/Categoria/Subcategoria/Produto: Hierarquia dos itens'],
-    ['- Receita: Valor de vendas em reais'],
-    ['- Margem (%): Margem de lucro atual'],
-    ['- % Quebra: Percentual de quebra/perda'],
-    ['- Qtde Marcas: Quantidade de marcas (atual, mínima e máxima recomendada)'],
-    ['- Preço: Valores de referência de mercado'],
-    ['- Giro Ideal: Dias ideais para renovação do estoque'],
-    ['- KVI: Produtos de alta importância (Key Value Items)'],
-    ['- Margens A/B/C: Faixas de margem por classificação'],
-    [''],
-    ['Para reimportar:'],
-    ['1. Salve o arquivo em formato CSV ou XLSX'],
-    ['2. Use a função "Importar CSV" no sistema'],
-    ['3. Aguarde o processamento e validação']
+  const wsInstrucoes = wb.addWorksheet("Instruções");
+  const instrucoes: string[][] = [
+    ["Instruções de Uso da Planilha Padrão"],
+    [""],
+    ["Esta planilha contém a estrutura mercadológica completa do seu supermercado."],
+    ["Você pode editar os dados e reimportar no sistema."],
+    [""],
+    ["Campos Principais:"],
+    ["- Departamento/Categoria/Subcategoria/Produto: Hierarquia dos itens"],
+    ["- Receita: Valor de vendas em reais"],
+    ["- Margem (%): Margem de lucro atual"],
+    ["- % Quebra: Percentual de quebra/perda"],
+    ["- Qtde Marcas: Quantidade de marcas (atual, mínima e máxima recomendada)"],
+    ["- Preço: Valores de referência de mercado"],
+    ["- Giro Ideal: Dias ideais para renovação do estoque"],
+    ["- KVI: Produtos de alta importância (Key Value Items)"],
+    ["- Margens A/B/C: Faixas de margem por classificação"],
+    [""],
+    ["Para reimportar:"],
+    ["1. Salve o arquivo em formato CSV ou XLSX"],
+    ["2. Use a função \"Importar CSV\" no sistema"],
+    ["3. Aguarde o processamento e validação"],
   ];
+  wsInstrucoes.addRows(instrucoes);
+  setColumnWidths(wsInstrucoes, [80]);
 
-  const wsInstrucoes = XLSX.utils.aoa_to_sheet(instrucoes);
-  wsInstrucoes['!cols'] = [{ wch: 80 }];
-  XLSX.utils.book_append_sheet(wb, wsInstrucoes, 'Instruções');
-
-  // Download
-  const currentDate = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `planilha-padrao-mercadologica-${currentDate}.xlsx`);
+  const currentDate = new Date().toISOString().split("T")[0];
+  await downloadWorkbook(wb, `planilha-padrao-mercadologica-${currentDate}.xlsx`);
 };
