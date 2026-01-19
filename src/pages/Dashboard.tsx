@@ -438,7 +438,7 @@ const Dashboard = () => {
                 />
               </GlassCard>
               <GlassCard className="p-0 overflow-hidden">
-                <MarginChart />
+                <MarginChart produtos={allProdutos} />
               </GlassCard>
             </div>
           </DraggableWidget>
