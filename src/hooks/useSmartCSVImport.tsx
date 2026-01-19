@@ -268,7 +268,7 @@ export const useSmartCSVImport = () => {
           RETRY_CONFIG.maxDelay
         );
         
-        console.log(`Tentativa ${retryCount + 1} falhou. Retentando em ${delay}ms...`);
+        // Retry attempt - delay before next try
         
         await new Promise(resolve => setTimeout(resolve, delay));
         return retryWithBackoff(operation, retryCount + 1);

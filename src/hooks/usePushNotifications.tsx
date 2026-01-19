@@ -57,14 +57,13 @@ export const usePushNotifications = () => {
       }
       return false;
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      // Silently fail - permission errors are expected in some contexts
       return false;
     }
   }, [state.isSupported]);
 
   const sendNotification = useCallback((title: string, options?: NotificationOptions) => {
     if (state.permission !== 'granted') {
-      console.log('Notifications not granted');
       return;
     }
 
@@ -84,7 +83,7 @@ export const usePushNotifications = () => {
       // Auto close after 10 seconds
       setTimeout(() => notification.close(), 10000);
     } catch (error) {
-      console.error('Error sending notification:', error);
+      // Silently fail - notification errors are non-critical
     }
   }, [state.permission]);
 

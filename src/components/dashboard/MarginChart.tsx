@@ -1,17 +1,56 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-import { categoriasSummary } from '@/data/mercadologico-data';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Produto } from '@/types/mercadologico';
 
-export const MarginChart = () => {
+interface MarginChartProps {
+  produtos?: Produto[];
+}
+
+export const MarginChart = ({ produtos = [] }: MarginChartProps) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const chartData = categoriasSummary.map(cat => ({
-    nome: cat.nome.split(' ')[0], // Abbreviated name
-    margem: cat.margemMediaPlanejada,
-    meta: 18, // Default target margin
-    status: cat.status
-  }));
+  // Calculate category-level margins from real product data
+  const chartData = useMemo(() => {
+    if (produtos.length === 0) {
+      return [];
+    }
+
+    // Group products by category and calculate average margins
+    const categoryData: Record<string, { totalMargin: number; count: number }> = {};
+
+    produtos.forEach(produto => {
+      const category = produto.categoria || 'Sem Categoria';
+      if (!categoryData[category]) {
+        categoryData[category] = { totalMargin: 0, count: 0 };
+      }
+      categoryData[category].totalMargin += produto.margemAtual || 0;
+      categoryData[category].count += 1;
+    });
+
+    // Convert to chart format and determine status
+    return Object.entries(categoryData)
+      .map(([nome, data]) => {
+        const avgMargin = data.count > 0 ? data.totalMargin / data.count : 0;
+        let status: 'success' | 'warning' | 'destructive' = 'success';
+        
+        if (avgMargin < 12) {
+          status = 'destructive';
+        } else if (avgMargin < 18) {
+          status = 'warning';
+        }
+
+        return {
+          nome: nome.length > 12 ? nome.substring(0, 12) + '...' : nome,
+          fullName: nome,
+          margem: Number(avgMargin.toFixed(1)),
+          meta: 18,
+          status
+        };
+      })
+      .sort((a, b) => b.margem - a.margem)
+      .slice(0, 8); // Limit to top 8 categories
+  }, [produtos]);
 
   const getBarColor = (status: string, isActive: boolean) => {
     const opacity = isActive ? '1' : '0.85';
@@ -22,6 +61,20 @@ export const MarginChart = () => {
       default: return `hsl(var(--primary) / ${opacity})`;
     }
   };
+
+  if (chartData.length === 0) {
+    return (
+      <Card className="shadow-soft animate-fade-in">
+        <CardHeader>
+          <CardTitle className="text-lg">Margem por Categoria</CardTitle>
+          <p className="text-sm text-muted-foreground">Margem atual vs. meta (18%)</p>
+        </CardHeader>
+        <CardContent className="h-[300px] flex items-center justify-center">
+          <p className="text-muted-foreground text-sm">Nenhum dado disponível</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-soft animate-fade-in">
@@ -55,7 +108,10 @@ export const MarginChart = () => {
             />
             <Tooltip 
               formatter={(value: number) => [`${value.toFixed(1)}%`, 'Margem']}
-              labelFormatter={(label) => `Categoria: ${label}`}
+              labelFormatter={(_, payload) => {
+                const data = payload?.[0]?.payload;
+                return `Categoria: ${data?.fullName || data?.nome || ''}`;
+              }}
               contentStyle={{ 
                 backgroundColor: 'hsl(var(--card))', 
                 border: '1px solid hsl(var(--border))',

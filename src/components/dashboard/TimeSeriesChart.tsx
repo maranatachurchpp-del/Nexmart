@@ -3,7 +3,7 @@ import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, Compos
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, BarChart3 } from 'lucide-react';
 
 interface TimeSeriesData {
   data: string;
@@ -15,6 +15,7 @@ export const TimeSeriesChart = () => {
   const { user } = useAuth();
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasData, setHasData] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -57,42 +58,17 @@ export const TimeSeriesChart = () => {
         margem: values.count > 0 ? Number((values.margem / values.count).toFixed(1)) : 0
       }));
 
-      // If no real data, generate sample data for demonstration
       if (chartData.length === 0) {
-        const sampleData = generateSampleData();
-        setTimeSeriesData(sampleData);
+        setHasData(false);
       } else {
         setTimeSeriesData(chartData);
+        setHasData(true);
       }
     } catch (error) {
-      // Fallback to sample data on error
-      setTimeSeriesData(generateSampleData());
+      setHasData(false);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateSampleData = (): TimeSeriesData[] => {
-    const data: TimeSeriesData[] = [];
-    const today = new Date();
-    
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      
-      // Generate consistent sample values based on day
-      const dayOfMonth = date.getDate();
-      const baseRevenue = 45000 + (dayOfMonth * 500);
-      const baseMargin = 18 + (dayOfMonth % 5) * 0.5;
-      
-      data.push({
-        data: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        faturamento: Math.round(baseRevenue),
-        margem: Number(baseMargin.toFixed(1))
-      });
-    }
-    
-    return data;
   };
 
   const formatCurrency = (value: number) => {
@@ -113,6 +89,24 @@ export const TimeSeriesChart = () => {
         </CardHeader>
         <CardContent className="h-[300px] flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <Card className="shadow-soft animate-fade-in">
+        <CardHeader>
+          <CardTitle className="text-lg">Evolução Temporal</CardTitle>
+          <p className="text-sm text-muted-foreground">Faturamento e margem bruta - últimos 30 dias</p>
+        </CardHeader>
+        <CardContent className="h-[300px] flex flex-col items-center justify-center text-center">
+          <BarChart3 className="w-12 h-12 text-muted-foreground/50 mb-4" />
+          <p className="text-muted-foreground text-sm font-medium">Sem dados históricos</p>
+          <p className="text-muted-foreground text-xs mt-1">
+            Os dados serão exibidos após a geração de snapshots diários
+          </p>
         </CardContent>
       </Card>
     );

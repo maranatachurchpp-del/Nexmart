@@ -54,20 +54,3 @@ export const LazySmartAlertsPanel = lazyLoad(
     <Skeleton className="h-48 w-full" />
   </div>
 );
-
-// Pages Lazy Loading
-export const LazyMercadologicalStructure = lazyLoad(
-  () => import('@/pages/MercadologicalStructure').then(m => ({ default: m.default }))
-);
-
-export const LazyReports = lazyLoad(
-  () => import('@/pages/Reports').then(m => ({ default: m.default }))
-);
-
-export const LazySettings = lazyLoad(
-  () => import('@/pages/Settings').then(m => ({ default: m.default }))
-);
-
-export const LazyAdmin = lazyLoad(
-  () => import('@/pages/Admin').then(m => ({ default: m.default }))
-);
