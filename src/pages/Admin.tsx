@@ -7,23 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  DollarSign, 
-  TrendingDown,
-  Search,
-  Calendar,
-  Clock,
-  X,
-  FileText,
-  Shield
-} from 'lucide-react';
+import { Users, DollarSign, TrendingDown, Search, Calendar, Clock, X, FileText, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WebhookStatus } from '@/components/admin/WebhookStatus';
 import { AuditLogsTable } from '@/components/admin/AuditLogsTable';
 import { PermissionsManager } from '@/components/admin/PermissionsManager';
 import { UserGrowthChart } from '@/components/admin/UserGrowthChart';
-
 interface AdminStats {
   totalUsers: number;
   activeSubscriptions: number;
@@ -31,7 +20,6 @@ interface AdminStats {
   mrr: number;
   churnRate: number;
 }
-
 interface UserData {
   id: string;
   email: string;
@@ -43,10 +31,14 @@ interface UserData {
     trial_end: string;
   };
 }
-
 export default function Admin() {
-  const { user } = useAuth();
-  const { isAdmin, loading: rolesLoading } = useUserRoles();
+  const {
+    user
+  } = useAuth();
+  const {
+    isAdmin,
+    loading: rolesLoading
+  } = useUserRoles();
   const navigate = useNavigate();
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
@@ -58,30 +50,27 @@ export default function Admin() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (rolesLoading) return; // Wait for roles to load
-    
+
     if (!isAdmin) {
       navigate('/dashboard');
       return;
     }
-    
     fetchAdminData();
   }, [isAdmin, rolesLoading, navigate]);
-
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch all subscriptions with plan details (use secure view)
-      const { data: subscriptions, error: subsError } = await supabase
-        .from('subscriptions')
-        .select(`
+      const {
+        data: subscriptions,
+        error: subsError
+      } = await supabase.from('subscriptions').select(`
           *,
           plan:subscription_plans(name, price_monthly)
         `);
-
       if (subsError) throw subsError;
 
       // Calculate real stats
@@ -90,7 +79,6 @@ export default function Admin() {
       const mrr = activeSubscriptions.reduce((sum, sub) => {
         return sum + (sub.plan?.price_monthly || 0);
       }, 0);
-
       setStats({
         totalUsers: subscriptions?.length || 0,
         activeSubscriptions: activeSubscriptions.length,
@@ -100,16 +88,16 @@ export default function Admin() {
       });
 
       // Fetch real user profiles with subscriptions
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select(`
+      const {
+        data: profiles,
+        error: profilesError
+      } = await supabase.from('profiles').select(`
           user_id,
           name,
           created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
+        `).order('created_at', {
+        ascending: false
+      }).limit(50);
       if (profilesError) throw profilesError;
 
       // Map profiles to users with subscription data
@@ -127,7 +115,6 @@ export default function Admin() {
           } : undefined
         };
       });
-
       setUsers(usersWithSubs);
     } catch (error) {
       console.error('Error fetching admin data:', error);
@@ -135,11 +122,7 @@ export default function Admin() {
       setLoading(false);
     }
   };
-
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+  const filteredUsers = users.filter(user => user.email.toLowerCase().includes(searchTerm.toLowerCase()));
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -149,19 +132,15 @@ export default function Admin() {
 
   // Show loading while checking roles
   if (rolesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground">Verificando permissões...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <Card className="max-w-md text-center">
           <CardContent className="p-8">
             <X className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -174,28 +153,22 @@ export default function Admin() {
             </Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando dados administrativos...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold">Painel Administrativo</h1>
-            <p className="text-muted-foreground">Gestão e métricas do Nexmart</p>
+            <p className="text-secondary-foreground">Gestão e métricas do Nexmart</p>
           </div>
           <Button variant="outline" onClick={() => navigate('/dashboard')}>
             Voltar ao App
@@ -285,21 +258,12 @@ export default function Admin() {
                 </CardDescription>
                 <div className="flex items-center space-x-2">
                   <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por e-mail..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                  />
+                  <Input placeholder="Buscar por e-mail..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="max-w-sm" />
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {filteredUsers.map((userData) => (
-                    <div
-                      key={userData.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
-                    >
+                  {filteredUsers.map(userData => <div key={userData.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
                       <div className="space-y-1">
                         <p className="font-medium">{userData.email}</p>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -309,21 +273,16 @@ export default function Admin() {
                       </div>
                       
                       <div className="flex items-center gap-2">
-                        {userData.subscription ? (
-                          <>
+                        {userData.subscription ? <>
                             <Badge variant={userData.subscription.status === 'active' ? 'default' : 'secondary'}>
                               {userData.subscription.status === 'active' ? 'Ativo' : 'Teste'}
                             </Badge>
                             <Badge variant="outline">
                               {userData.subscription.plan_name}
                             </Badge>
-                          </>
-                        ) : (
-                          <Badge variant="secondary">Sem assinatura</Badge>
-                        )}
+                          </> : <Badge variant="secondary">Sem assinatura</Badge>}
                       </div>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -346,6 +305,5 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
