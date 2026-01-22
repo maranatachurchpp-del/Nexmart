@@ -107,7 +107,7 @@ export const useRealtimeMetrics = () => {
           table: 'produtos',
           filter: `user_id=eq.${user.id}`
         },
-        async (payload) => {
+        (payload) => {
           // Add to recent changes
           const change: ProductChange = {
             type: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
@@ -117,16 +117,86 @@ export const useRealtimeMetrics = () => {
           
           setRecentChanges(prev => [change, ...prev.slice(0, 9)]);
 
-          // Refetch metrics for accuracy
-          const { data: products } = await supabase
-            .from('produtos')
-            .select('*')
-            .eq('user_id', user.id);
-
-          if (products) {
-            const calculatedMetrics = calculateMetrics(products);
-            setMetrics(calculatedMetrics);
-          }
+          // Incremental update instead of full refetch
+          setMetrics(prevMetrics => {
+            const newProduct = payload.new as any;
+            const oldProduct = payload.old as any;
+            
+            if (payload.eventType === 'INSERT' && newProduct) {
+              const newMargin = ((newProduct.margem_a_min || 0) + (newProduct.margem_a_max || 0)) / 2;
+              const newTotal = prevMetrics.totalProducts + 1;
+              const newAvgMargin = ((prevMetrics.averageMargin * prevMetrics.totalProducts) + newMargin) / newTotal;
+              
+              return {
+                ...prevMetrics,
+                totalProducts: newTotal,
+                averageMargin: Math.round(newAvgMargin * 10) / 10,
+                revenueParticipation: Math.round((prevMetrics.revenueParticipation + (newProduct.participacao_faturamento || 0)) * 10) / 10,
+                criticalProducts: prevMetrics.criticalProducts + (newProduct.status === 'destructive' ? 1 : 0),
+                warningProducts: prevMetrics.warningProducts + (newProduct.status === 'warning' ? 1 : 0),
+                successProducts: prevMetrics.successProducts + (newProduct.status === 'success' ? 1 : 0),
+                alertCount: prevMetrics.alertCount + (newProduct.status === 'destructive' || newProduct.status === 'warning' ? 1 : 0),
+                lastUpdate: new Date()
+              };
+            }
+            
+            if (payload.eventType === 'DELETE' && oldProduct) {
+              const oldMargin = ((oldProduct.margem_a_min || 0) + (oldProduct.margem_a_max || 0)) / 2;
+              const newTotal = Math.max(0, prevMetrics.totalProducts - 1);
+              const newAvgMargin = newTotal > 0 
+                ? ((prevMetrics.averageMargin * prevMetrics.totalProducts) - oldMargin) / newTotal 
+                : 0;
+              
+              return {
+                ...prevMetrics,
+                totalProducts: newTotal,
+                averageMargin: Math.round(newAvgMargin * 10) / 10,
+                revenueParticipation: Math.round(Math.max(0, prevMetrics.revenueParticipation - (oldProduct.participacao_faturamento || 0)) * 10) / 10,
+                criticalProducts: Math.max(0, prevMetrics.criticalProducts - (oldProduct.status === 'destructive' ? 1 : 0)),
+                warningProducts: Math.max(0, prevMetrics.warningProducts - (oldProduct.status === 'warning' ? 1 : 0)),
+                successProducts: Math.max(0, prevMetrics.successProducts - (oldProduct.status === 'success' ? 1 : 0)),
+                alertCount: Math.max(0, prevMetrics.alertCount - (oldProduct.status === 'destructive' || oldProduct.status === 'warning' ? 1 : 0)),
+                lastUpdate: new Date()
+              };
+            }
+            
+            if (payload.eventType === 'UPDATE' && newProduct && oldProduct) {
+              // For updates, adjust counts based on status changes
+              const oldStatus = oldProduct.status;
+              const newStatus = newProduct.status;
+              
+              let criticalDelta = 0, warningDelta = 0, successDelta = 0;
+              
+              if (oldStatus !== newStatus) {
+                if (oldStatus === 'destructive') criticalDelta--;
+                if (oldStatus === 'warning') warningDelta--;
+                if (oldStatus === 'success') successDelta--;
+                
+                if (newStatus === 'destructive') criticalDelta++;
+                if (newStatus === 'warning') warningDelta++;
+                if (newStatus === 'success') successDelta++;
+              }
+              
+              // Recalculate margin
+              const oldMargin = ((oldProduct.margem_a_min || 0) + (oldProduct.margem_a_max || 0)) / 2;
+              const newMargin = ((newProduct.margem_a_min || 0) + (newProduct.margem_a_max || 0)) / 2;
+              const totalMargin = (prevMetrics.averageMargin * prevMetrics.totalProducts) - oldMargin + newMargin;
+              const newAvgMargin = prevMetrics.totalProducts > 0 ? totalMargin / prevMetrics.totalProducts : 0;
+              
+              return {
+                ...prevMetrics,
+                averageMargin: Math.round(newAvgMargin * 10) / 10,
+                revenueParticipation: Math.round((prevMetrics.revenueParticipation - (oldProduct.participacao_faturamento || 0) + (newProduct.participacao_faturamento || 0)) * 10) / 10,
+                criticalProducts: prevMetrics.criticalProducts + criticalDelta,
+                warningProducts: prevMetrics.warningProducts + warningDelta,
+                successProducts: prevMetrics.successProducts + successDelta,
+                alertCount: prevMetrics.criticalProducts + criticalDelta + prevMetrics.warningProducts + warningDelta,
+                lastUpdate: new Date()
+              };
+            }
+            
+            return { ...prevMetrics, lastUpdate: new Date() };
+          });
         }
       )
       .subscribe((status) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,14 @@ const Auth = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("login");
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  // State-based redirect after successful registration
+  useEffect(() => {
+    if (shouldRedirect) {
+      navigate("/onboarding");
+    }
+  }, [shouldRedirect, navigate]);
 
   // Password validation
   const validatePassword = (password: string) => {
@@ -98,9 +106,8 @@ const Auth = () => {
           setError("Erro no cadastro. Tente novamente.");
         }
       } else {
-        setSuccess("Conta criada com sucesso! Bem-vindo ao Mercadológico SaaS!");
-        // Redirect to onboarding after successful registration
-        setTimeout(() => navigate("/onboarding"), 2000);
+        setSuccess("Conta criada com sucesso! Redirecionando...");
+        setShouldRedirect(true);
       }
     } catch (err) {
       setError("Erro inesperado. Tente novamente.");
