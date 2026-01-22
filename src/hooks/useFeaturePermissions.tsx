@@ -63,19 +63,26 @@ export const useFeaturePermissions = (): UseFeaturePermissionsReturn => {
   }, [fetchPermissions]);
 
   const hasPermission = useCallback((feature: Feature, permission: Permission): boolean => {
-    // If no permissions configured, allow by default for better UX
-    if (permissions.length === 0) return true;
+    // SECURITY: Deny by default if no permissions configured
+    // This prevents unauthorized access when permission system is not set up
+    if (permissions.length === 0) {
+      // Allow read-only access for basic UX, but deny write/delete/export
+      return permission === 'read';
+    }
     
     const featurePerms = permissions.find(p => p.feature === feature);
-    // If feature not in permissions table, allow by default
-    if (!featurePerms) return true;
+    // SECURITY: If feature not in permissions table, deny by default
+    if (!featurePerms) {
+      // Allow read-only access, deny everything else
+      return permission === 'read';
+    }
     
     switch (permission) {
-      case 'read': return featurePerms.can_read ?? true;
-      case 'write': return featurePerms.can_write ?? true;
-      case 'delete': return featurePerms.can_delete ?? true;
-      case 'export': return featurePerms.can_export ?? true;
-      default: return true;
+      case 'read': return featurePerms.can_read ?? false;
+      case 'write': return featurePerms.can_write ?? false;
+      case 'delete': return featurePerms.can_delete ?? false;
+      case 'export': return featurePerms.can_export ?? false;
+      default: return false;
     }
   }, [permissions]);
 
