@@ -300,9 +300,7 @@ Gere alertas práticos e acionáveis baseados nestes dados reais.`
   } catch (error) {
     console.error('Error generating smart alerts:', error);
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Internal server error'
-      }),
+      JSON.stringify({ error: 'Unable to generate alerts' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
