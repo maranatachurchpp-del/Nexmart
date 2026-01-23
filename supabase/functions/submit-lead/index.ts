@@ -33,6 +33,21 @@ function isValidEmail(email: string): boolean {
   return emailRegex.test(email) && email.length <= 255;
 }
 
+function isSuspiciousSubmission(metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== 'object') return false;
+  const m = metadata as Record<string, unknown>;
+
+  // Honeypot (should always be empty)
+  const hp = typeof m.hp === 'string' ? m.hp.trim() : '';
+  if (hp.length > 0) return true;
+
+  // Minimum time on page/form (ms) - blocks obvious bots
+  const elapsed = typeof m.elapsed_ms === 'number' ? m.elapsed_ms : NaN;
+  if (Number.isFinite(elapsed) && elapsed >= 0 && elapsed < 800) return true;
+
+  return false;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -92,6 +107,14 @@ serve(async (req) => {
       if (metadataStr.length <= 1000) {
         sanitizedMetadata = metadata;
       }
+    }
+
+    // Basic bot mitigation (mirrors frontend checks)
+    if (isSuspiciousSubmission(sanitizedMetadata)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid submission' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Create Supabase client with service role (bypasses RLS)

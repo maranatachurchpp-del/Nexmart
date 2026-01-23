@@ -8,12 +8,29 @@ import { ScrollReveal } from "@/hooks/useScrollAnimation";
 
 export const HeroSection = () => {
   const [email, setEmail] = useState("");
+  // Basic bot mitigation (no UX impact): honeypot + minimum submit time
+  const [honeypot, setHoneypot] = useState("");
+  const [formStartTime] = useState(() => Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
+
+    // Simple anti-bot checks (mirrored server-side)
+    const elapsedMs = Date.now() - formStartTime;
+    if (honeypot.trim()) {
+      return;
+    }
+    if (elapsedMs < 800) {
+      toast({
+        title: "Muitas tentativas",
+        description: "Por favor, aguarde um momento e tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -27,7 +44,13 @@ export const HeroSection = () => {
           body: JSON.stringify({
             email: email.trim().toLowerCase(),
             source: 'landing_hero',
-            metadata: { page: 'index', timestamp: new Date().toISOString() }
+            // Pass bot-mitigation telemetry to backend validation
+            metadata: {
+              page: 'index',
+              timestamp: new Date().toISOString(),
+              elapsed_ms: elapsedMs,
+              hp: honeypot.trim(),
+            }
           })
         }
       );
@@ -104,6 +127,17 @@ export const HeroSection = () => {
         <ScrollReveal delay={0.3}>
           <div className="max-w-lg mx-auto mb-16">
             <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-4 mb-8">
+              {/* Honeypot field (hidden from humans, caught server-side) */}
+              <input
+                type="text"
+                name="company"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                className="hidden"
+                aria-hidden="true"
+              />
               <Input 
                 type="email" 
                 placeholder="seu-email@supermercado.com" 
