@@ -173,6 +173,30 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_rate_limits: {
+        Row: {
+          count: number
+          created_at: string
+          key: string
+          reset_at: string
+          updated_at: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          key: string
+          reset_at: string
+          updated_at?: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          key?: string
+          reset_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           converted_at: string | null
