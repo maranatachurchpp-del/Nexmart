@@ -154,12 +154,12 @@ export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBar
 
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">Departamento</label>
-              <Select value={filters.departamento || ''} onValueChange={(value) => handleFilterChange('departamento', value || undefined)}>
+              <Select value={filters.departamento || '__all__'} onValueChange={(value) => handleFilterChange('departamento', value === '__all__' ? undefined : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="__all__">Todos</SelectItem>
                   {departamentos.map(dept => (
                     <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                   ))}
@@ -169,16 +169,16 @@ export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBar
 
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">Categoria</label>
-              <Select 
-                value={filters.categoria || ''} 
-                onValueChange={(value) => handleFilterChange('categoria', value || undefined)}
+            <Select 
+                value={filters.categoria || '__all__'} 
+                onValueChange={(value) => handleFilterChange('categoria', value === '__all__' ? undefined : value)}
                 disabled={!filters.departamento}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="__all__">Todas</SelectItem>
                   {categorias.map(cat => (
                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
@@ -188,16 +188,16 @@ export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBar
 
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">Subcategoria</label>
-              <Select 
-                value={filters.subcategoria || ''} 
-                onValueChange={(value) => handleFilterChange('subcategoria', value || undefined)}
+            <Select 
+                value={filters.subcategoria || '__all__'} 
+                onValueChange={(value) => handleFilterChange('subcategoria', value === '__all__' ? undefined : value)}
                 disabled={!filters.categoria}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="__all__">Todas</SelectItem>
                   {subcategorias.map(sub => (
                     <SelectItem key={sub} value={sub}>{sub}</SelectItem>
                   ))}
