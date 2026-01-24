@@ -73,15 +73,21 @@ export default function MercadologicalStructure() {
     });
 
       return Array.from(departamentos.values()).map((dept: any) => ({
-        nome: dept.nome,
-        tipo: dept.tipo,
+        nome: dept.nome as string,
+        tipo: dept.tipo as 'departamento',
         produtos: dept.produtos,
         categorias: Array.from(dept.categorias.values()).map((cat: any) => ({
-          nome: cat.nome,
-          tipo: cat.tipo,
-          departamento: cat.departamento,
+          nome: cat.nome as string,
+          tipo: cat.tipo as 'categoria',
+          departamento: cat.departamento as string,
           produtos: cat.produtos,
-          subcategorias: Array.from(cat.subcategorias.values())
+          subcategorias: Array.from(cat.subcategorias.values()).map((subcat: any) => ({
+            nome: subcat.nome as string,
+            tipo: subcat.tipo as 'subcategoria',
+            departamento: subcat.departamento as string,
+            categoria: subcat.categoria as string,
+            produtos: subcat.produtos
+          }))
         }))
       }));
   }, [produtos, searchTerm]);

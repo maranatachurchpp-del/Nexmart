@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import type { Tables } from '@/integrations/supabase/types';
+
+// Database types
+type AlertHistoryRow = Tables<'alert_history'>;
+type NotificationRow = Tables<'notifications'>;
 
 interface PushNotificationState {
   isSupported: boolean;
@@ -102,7 +107,7 @@ export const usePushNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          const alert = payload.new as any;
+          const alert = payload.new as Partial<AlertHistoryRow>;
           
           // Only send push for high priority alerts
           if (alert.priority === 'high' || alert.priority === 'critical') {
@@ -124,7 +129,7 @@ export const usePushNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          const notification = payload.new as any;
+          const notification = payload.new as Partial<NotificationRow>;
           
           // Only send push for error/warning notifications
           if (notification.type === 'error' || notification.type === 'warning') {

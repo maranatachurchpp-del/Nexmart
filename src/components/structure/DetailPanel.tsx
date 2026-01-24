@@ -5,10 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { StatusBadge } from '@/components/StatusBadge';
 
+// Import shared type from TreeView
+import type { HierarchyItem } from './TreeView';
+
 interface DetailPanelProps {
-  item: any;
-  onEdit: (item: any) => void;
-  onDelete: (item: any) => void;
+  item: HierarchyItem | null;
+  onEdit: (item: HierarchyItem) => void;
+  onDelete: (item: HierarchyItem) => void;
 }
 
 export const DetailPanel = ({ item, onEdit, onDelete }: DetailPanelProps) => {
@@ -227,22 +230,30 @@ export const DetailPanel = ({ item, onEdit, onDelete }: DetailPanelProps) => {
             <div className="space-y-2">
               <h4 className="font-medium text-sm">Informações Adicionais</h4>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-muted-foreground">Giro Ideal:</span>
-                  <div className="font-medium">{item.giroIdealMes} dias</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Participação:</span>
-                  <div className="font-medium">{item.participacaoFaturamento}%</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Preço Min:</span>
-                  <div className="font-medium">R$ {item.precoMedioReferencia.min}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Preço Max:</span>
-                  <div className="font-medium">R$ {item.precoMedioReferencia.max}</div>
-                </div>
+                {item.giroIdealMes !== undefined && (
+                  <div>
+                    <span className="text-muted-foreground">Giro Ideal:</span>
+                    <div className="font-medium">{item.giroIdealMes} dias</div>
+                  </div>
+                )}
+                {item.participacaoFaturamento !== undefined && (
+                  <div>
+                    <span className="text-muted-foreground">Participação:</span>
+                    <div className="font-medium">{item.participacaoFaturamento}%</div>
+                  </div>
+                )}
+                {item.precoMedioReferencia && (
+                  <>
+                    <div>
+                      <span className="text-muted-foreground">Preço Min:</span>
+                      <div className="font-medium">R$ {item.precoMedioReferencia.min}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Preço Max:</span>
+                      <div className="font-medium">R$ {item.precoMedioReferencia.max}</div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </>
