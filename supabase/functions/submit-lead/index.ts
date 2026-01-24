@@ -6,26 +6,33 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple in-memory rate limiting (per IP)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// Rate limiting configuration
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const MAX_REQUESTS_PER_WINDOW = 5;
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+// Persistent rate limiting using database (survives cold starts / multiple instances)
+async function checkAndIncrementRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  key: string
+): Promise<boolean> {
+  const now = new Date();
+  const resetAt = new Date(now.getTime() + RATE_LIMIT_WINDOW_MS);
+
+  // Upsert: increment count if within window, reset if expired
+  const { data, error } = await supabase.rpc('upsert_rate_limit', {
+    p_key: key,
+    p_max_count: MAX_REQUESTS_PER_WINDOW,
+    p_reset_at: resetAt.toISOString(),
+  });
+
+  if (error) {
+    console.error('Rate limit check failed:', error.message);
+    // Fail open on error (allow request) but log for monitoring
     return false;
   }
-  
-  if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
-    return true;
-  }
-  
-  entry.count++;
-  return false;
+
+  // data = true means rate limited
+  return data === true;
 }
 
 function isValidEmail(email: string): boolean {
@@ -68,8 +75,14 @@ serve(async (req) => {
                      req.headers.get('cf-connecting-ip') || 
                      'unknown';
 
-    // Check rate limit
-    if (isRateLimited(clientIP)) {
+    // Create Supabase client with service role (bypasses RLS for rate limit table)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check persistent rate limit (survives cold starts)
+    const isLimited = await checkAndIncrementRateLimit(supabase, `ip:${clientIP}`);
+    if (isLimited) {
       return new Response(
         JSON.stringify({ error: 'Too many requests. Please try again later.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
