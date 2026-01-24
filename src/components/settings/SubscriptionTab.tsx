@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SubscriptionData {
@@ -32,6 +32,11 @@ export const SubscriptionTab = ({
   onManageSubscription
 }: SubscriptionTabProps) => {
   const navigate = useNavigate();
+
+  // Check if user has a paid subscription (not just trial)
+  const hasPaidSubscription = subscription && 
+    subscription.status === 'active' && 
+    subscription.plan.price_monthly > 0;
 
   return (
     <div className="space-y-6">
@@ -113,28 +118,45 @@ export const SubscriptionTab = ({
 
               <Separator />
 
-              <Button
-                onClick={onManageSubscription}
-                disabled={loadingPortal}
-                className="w-full"
-              >
-                {loadingPortal ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Carregando...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Gerenciar Assinatura
-                  </>
-                )}
-              </Button>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Você será redirecionado para o portal seguro do Stripe onde poderá
-                atualizar seu cartão, visualizar faturas e gerenciar sua assinatura.
-              </p>
+              {/* Show different buttons based on subscription status */}
+              {isTrialing || !hasPaidSubscription ? (
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => navigate('/subscription')}
+                    className="w-full"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Assinar um Plano
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Escolha um plano para continuar usando a plataforma após o período de teste.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Button
+                    onClick={onManageSubscription}
+                    disabled={loadingPortal}
+                    className="w-full"
+                  >
+                    {loadingPortal ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Carregando...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Gerenciar Assinatura
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Você será redirecionado para o portal seguro do Stripe onde poderá
+                    atualizar seu cartão, visualizar faturas e gerenciar sua assinatura.
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center py-8">
