@@ -755,6 +755,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      upsert_rate_limit: {
+        Args: { p_key: string; p_max_count: number; p_reset_at: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "moderator"

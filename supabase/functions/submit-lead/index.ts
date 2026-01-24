@@ -130,11 +130,7 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client with service role (bypasses RLS)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Reuse supabase client created above for rate limiting
 
     // Insert lead
     const { data, error } = await supabase
