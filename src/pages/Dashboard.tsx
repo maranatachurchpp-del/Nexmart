@@ -17,10 +17,9 @@ import { AnimatedNumber } from '@/components/ui/animated-number';
 import { DraggableWidget } from '@/components/dashboard/DraggableWidget';
 import { WidgetSettingsPanel } from '@/components/dashboard/WidgetSettingsPanel';
 import { 
-  BarChart3, LogOut, User, Settings, Upload, TrendingUp, DollarSign, 
-  AlertTriangle, ShoppingCart, Package, Star, Shield, PackageX, Trash2 
+  TrendingUp, DollarSign, 
+  AlertTriangle, ShoppingCart, Package, Star, PackageX, Trash2 
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { DataTable } from '@/components/dashboard/DataTable';
@@ -31,16 +30,13 @@ import {
   LazyTimeSeriesChart, 
   LazySmartAlertsPanel 
 } from '@/components/LazyComponents';
-import { NotificationsDropdown } from '@/components/NotificationsDropdown';
-import { ExportMenu } from '@/components/ExportMenu';
 import { ImportWizard } from '@/components/import/ImportWizard';
-import { RealtimeIndicator } from '@/components/dashboard/RealtimeIndicator';
-import { RecentChangesPanel } from '@/components/dashboard/RecentChangesPanel';
 import { RealtimeMetricsChart } from '@/components/dashboard/RealtimeMetricsChart';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { PushNotificationToggle } from '@/components/PushNotificationToggle';
 import { GaugeChart, RadialProgressChart, SparklineCard, HeatmapChart } from '@/components/dashboard/ModernCharts';
 import { DataManagementDialog } from '@/components/dashboard/DataManagementDialog';
+import { RecentChangesPanel } from '@/components/dashboard/RecentChangesPanel';
+import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { DashboardHeader } from '@/components/DashboardHeader';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
 
 const Dashboard = () => {
@@ -98,8 +94,8 @@ const Dashboard = () => {
   const { metrics, recentChanges, isConnected } = useRealtimeMetrics();
   const { widgets, reorderWidgets, toggleWidgetVisibility, resetToDefault } = useDashboardWidgets();
   const { getSparklineData, calculateTrend } = useProductSnapshots();
-  const navigate = useNavigate();
   const [importWizardOpen, setImportWizardOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [tableFilters, setTableFilters] = useState<{ search?: string; sortField?: string; sortDirection?: 'asc' | 'desc' }>({});
 
   // Persist filters to localStorage
@@ -526,88 +522,71 @@ const Dashboard = () => {
 
   return (
     <AccessControl>
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="border-b border-border glass-strong sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-3 md:py-4">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-primary animate-pulse-glow" />
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground text-xl md:text-2xl gradient-text">Nexmart</span>
-                  <RealtimeIndicator isConnected={isConnected} lastUpdate={metrics.lastUpdate} />
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
-                  <User className="w-4 h-4" />
-                  <span className="truncate max-w-[150px] md:max-w-none">{user?.email}</span>
-                </div>
-                <ThemeToggle />
-                <PushNotificationToggle />
-                <NotificationsDropdown />
+      <div className="min-h-screen bg-background flex">
+        {/* Sidebar */}
+        <DashboardSidebar 
+          mobileOpen={mobileSidebarOpen} 
+          onMobileClose={() => setMobileSidebarOpen(false)} 
+        />
+
+        {/* Main Content Area */}
+        <div className="flex-1 lg:ml-64 transition-all duration-300">
+          {/* Compact Header */}
+          <DashboardHeader
+            isConnected={isConnected}
+            lastUpdate={metrics.lastUpdate}
+            produtos={allProdutos}
+            filters={filters}
+            onImportClick={() => setImportWizardOpen(true)}
+            onMenuClick={() => setMobileSidebarOpen(true)}
+            showMenuButton={true}
+          />
+
+          {/* Main Content */}
+          <main className="p-4 lg:p-6">
+            {/* Trial Banner */}
+            <TrialBanner />
+
+            {/* Widget Settings - Now in a floating position */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-foreground">Visão Geral</h2>
+              <div className="flex items-center gap-2">
+                <DataManagementDialog onDataCleared={refreshProducts} />
                 <WidgetSettingsPanel 
                   widgets={widgets}
                   onToggleVisibility={toggleWidgetVisibility}
                   onReset={resetToDefault}
                 />
-                <ExportMenu produtos={allProdutos} filters={filters} />
-                <DataManagementDialog onDataCleared={refreshProducts} />
-                <Button variant="outline" size="sm" onClick={() => setImportWizardOpen(true)} className="hover-lift">
-                  <Upload className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Importar</span>
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate('/settings')} className="hover-lift">
-                  <Settings className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Configurações</span>
-                </Button>
-                {isAdmin && (
-                  <Button variant="outline" size="sm" onClick={() => navigate('/admin')} className="hover-lift">
-                    <Shield className="w-4 h-4 md:mr-2" />
-                    <span className="hidden md:inline">Admin</span>
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleLogout} className="hover-lift">
-                  <LogOut className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Sair</span>
-                </Button>
               </div>
             </div>
-          </div>
-        </header>
+            
+            {/* Filters */}
+            <FilterBar filters={filters} onFiltersChange={setFilters} produtos={allProdutos} />
 
-        {/* Main Content */}
-        <main className="container mx-auto px-4 py-6">
-          {/* Trial Banner */}
-          <TrialBanner />
-          
-          {/* Filters */}
-          <FilterBar filters={filters} onFiltersChange={setFilters} produtos={allProdutos} />
+            {/* Draggable Widgets */}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="dashboard-widgets">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={snapshot.isDraggingOver ? 'bg-accent/20 rounded-lg transition-colors' : ''}
+                  >
+                    {visibleWidgets.map((widget, index) => renderWidget(widget.id, index))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </main>
 
-          {/* Draggable Widgets */}
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="dashboard-widgets">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={snapshot.isDraggingOver ? 'bg-accent/20 rounded-lg transition-colors' : ''}
-                >
-                  {visibleWidgets.map((widget, index) => renderWidget(widget.id, index))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        </main>
-
-        {/* Import Wizard */}
-        <ImportWizard 
-          open={importWizardOpen} 
-          onOpenChange={setImportWizardOpen}
-          onSuccess={handleImportSuccess}
-        />
+          {/* Import Wizard */}
+          <ImportWizard 
+            open={importWizardOpen} 
+            onOpenChange={setImportWizardOpen}
+            onSuccess={handleImportSuccess}
+          />
+        </div>
       </div>
     </AccessControl>
   );
