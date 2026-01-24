@@ -23,12 +23,14 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
-import { RevenueChart } from '@/components/dashboard/RevenueChart';
-import { MarginChart } from '@/components/dashboard/MarginChart';
-import { TimeSeriesChart } from '@/components/dashboard/TimeSeriesChart';
 import { DataTable } from '@/components/dashboard/DataTable';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
-import SmartAlertsPanel from '@/components/dashboard/SmartAlertsPanel';
+import { 
+  LazyRevenueChart, 
+  LazyMarginChart, 
+  LazyTimeSeriesChart, 
+  LazySmartAlertsPanel 
+} from '@/components/LazyComponents';
 import { NotificationsDropdown } from '@/components/NotificationsDropdown';
 import { ExportMenu } from '@/components/ExportMenu';
 import { ImportWizard } from '@/components/import/ImportWizard';
@@ -432,13 +434,13 @@ const Dashboard = () => {
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
               <GlassCard className="p-0 overflow-hidden">
-                <RevenueChart 
+                <LazyRevenueChart 
                   produtos={allProdutos} 
                   onDepartmentClick={handleDepartmentDrillDown}
                 />
               </GlassCard>
               <GlassCard className="p-0 overflow-hidden">
-                <MarginChart produtos={allProdutos} />
+                <LazyMarginChart produtos={allProdutos} />
               </GlassCard>
             </div>
           </DraggableWidget>
@@ -449,7 +451,7 @@ const Dashboard = () => {
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="mb-4 md:mb-6">
               <GlassCard className="p-0 overflow-hidden">
-                <TimeSeriesChart />
+                <LazyTimeSeriesChart />
               </GlassCard>
             </div>
           </DraggableWidget>
@@ -470,7 +472,7 @@ const Dashboard = () => {
         return (
           <DraggableWidget key={widget.id} id={widget.id} index={index}>
             <div className="mb-4 md:mb-6">
-              <SmartAlertsPanel />
+              <LazySmartAlertsPanel />
             </div>
           </DraggableWidget>
         );

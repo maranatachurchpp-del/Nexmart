@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import type { Tables } from '@/integrations/supabase/types';
+
+// Use database type for product data
+type ProductRow = Tables<'produtos'>;
 
 interface RealtimeMetrics {
   totalProducts: number;
@@ -15,7 +19,7 @@ interface RealtimeMetrics {
 
 interface ProductChange {
   type: 'INSERT' | 'UPDATE' | 'DELETE';
-  product: any;
+  product: Partial<ProductRow> | null;
   timestamp: Date;
 }
 
@@ -35,7 +39,7 @@ export const useRealtimeMetrics = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const calculateMetrics = useCallback((products: any[]) => {
+  const calculateMetrics = useCallback((products: ProductRow[]) => {
     if (!products || products.length === 0) {
       return {
         totalProducts: 0,
@@ -119,8 +123,8 @@ export const useRealtimeMetrics = () => {
 
           // Incremental update instead of full refetch
           setMetrics(prevMetrics => {
-            const newProduct = payload.new as any;
-            const oldProduct = payload.old as any;
+            const newProduct = payload.new as Partial<ProductRow> | null;
+            const oldProduct = payload.old as Partial<ProductRow> | null;
             
             if (payload.eventType === 'INSERT' && newProduct) {
               const newMargin = ((newProduct.margem_a_min || 0) + (newProduct.margem_a_max || 0)) / 2;

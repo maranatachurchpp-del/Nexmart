@@ -5,13 +5,49 @@ import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { cn } from '@/lib/utils';
 
+// Type definitions for hierarchical structure
+// Using flexible interface that works with dynamically generated hierarchy
+interface HierarchyItem {
+  id?: string;
+  nome: string;
+  tipo: 'departamento' | 'categoria' | 'subcategoria' | 'produto';
+  codigo?: string;
+  descricao?: string;
+  departamento?: string;
+  categoria?: string;
+  subcategoria?: string;
+  status?: 'success' | 'warning' | 'destructive';
+  produtosForaPadrao?: number;
+  totalProdutos?: number;
+  produtos?: HierarchyItem[];
+  categorias?: HierarchyItem[];
+  subcategorias?: HierarchyItem[];
+  children?: HierarchyItem[];
+  // Product-specific fields
+  margemAtual?: number;
+  margemA?: { min: number; max: number };
+  marcasAtuais?: number;
+  marcasMin?: number;
+  marcasMax?: number;
+  quebraAtual?: number;
+  quebraEsperada?: number;
+  classificacaoKVI?: 'Alta' | 'Média' | 'Baixa';
+  giroIdealMes?: number;
+  participacaoFaturamento?: number;
+  precoMedioReferencia?: { min: number; max: number };
+  margemMediaPlanejada?: number;
+}
+
+// Export type for use in other components
+export type { HierarchyItem };
+
 interface TreeViewProps {
-  hierarchy: any[];
-  onItemClick: (item: any) => void;
-  onAddItem: (type: string, parent?: any) => void;
-  onEditItem: (item: any) => void;
-  onDeleteItem: (item: any) => void;
-  selectedItem: any;
+  hierarchy: HierarchyItem[];
+  onItemClick: (item: HierarchyItem) => void;
+  onAddItem: (type: string, parent?: HierarchyItem) => void;
+  onEditItem: (item: HierarchyItem) => void;
+  onDeleteItem: (item: HierarchyItem) => void;
+  selectedItem: HierarchyItem | null;
 }
 
 export const TreeView = ({
