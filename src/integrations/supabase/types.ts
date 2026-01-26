@@ -683,6 +683,13 @@ export type Database = {
             referencedRelation: "subscription_plans"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -708,7 +715,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      subscription_plans_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          id: string | null
+          is_active: boolean | null
+          max_users: number | null
+          name: string | null
+          price_monthly: number | null
+          trial_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string | null
+          is_active?: boolean | null
+          max_users?: number | null
+          name?: string | null
+          price_monthly?: number | null
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string | null
+          is_active?: boolean | null
+          max_users?: number | null
+          name?: string | null
+          price_monthly?: number | null
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_feature_permission: {

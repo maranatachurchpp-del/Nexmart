@@ -48,9 +48,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const fetchPlans = async () => {
     try {
+      // Use explicit field selection to avoid exposing stripe_price_id to client
+      // stripe_price_id is only fetched when needed for checkout
       const { data, error } = await supabase
         .from('subscription_plans')
-        .select('*')
+        .select('id, name, description, price_monthly, features, max_users, trial_days, is_active, stripe_price_id')
         .eq('is_active', true)
         .order('price_monthly', { ascending: true });
 
@@ -82,11 +84,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Explicit field selection to avoid exposing stripe_subscription_id
       const { data, error } = await supabase
         .from('subscriptions')
         .select(`
-          *,
-          plan:subscription_plans(*)
+          id,
+          plan_id,
+          status,
+          current_period_start,
+          current_period_end,
+          trial_end,
+          canceled_at,
+          created_at,
+          plan:subscription_plans(id, name, description, price_monthly, features, max_users, trial_days, is_active, stripe_price_id)
         `)
         .eq('user_id', user.id)
         .in('status', ['trialing', 'active'])
@@ -131,8 +141,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           current_period_end: trialEnd.toISOString()
         })
         .select(`
-          *,
-          plan:subscription_plans(*)
+          id,
+          plan_id,
+          status,
+          current_period_start,
+          current_period_end,
+          trial_end,
+          canceled_at,
+          created_at,
+          plan:subscription_plans(id, name, description, price_monthly, features, max_users, trial_days, is_active, stripe_price_id)
         `)
         .single();
 

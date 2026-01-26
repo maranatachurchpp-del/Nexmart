@@ -48,9 +48,10 @@ export default function Settings() {
   const fetchProfile = async () => {
     try {
       setLoading(true);
+      // Explicit field selection to avoid exposing stripe_customer_id
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('name, company_name, annual_revenue, store_count, focus_areas, experience_level')
         .eq('user_id', user?.id)
         .maybeSingle();
 
