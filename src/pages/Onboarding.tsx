@@ -39,7 +39,7 @@ const Onboarding = () => {
     mainObjective: ''
   });
 
-  const totalSteps = 4;
+  const totalSteps = 5;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const handleNext = () => {
