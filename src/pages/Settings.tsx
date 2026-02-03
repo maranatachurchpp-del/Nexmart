@@ -6,11 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Building2, CreditCard, Bell, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Building2, CreditCard, Bell, Store, Loader2 } from 'lucide-react';
 import { AlertConfigPanel } from '@/components/alerts/AlertConfigPanel';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { CompanyTab } from '@/components/settings/CompanyTab';
 import { SubscriptionTab } from '@/components/settings/SubscriptionTab';
+import { StoresTab } from '@/components/settings/StoresTab';
 
 export default function Settings() {
   const { user, signOut } = useAuth();
@@ -269,7 +270,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Perfil</span>
@@ -277,6 +278,10 @@ export default function Settings() {
             <TabsTrigger value="company" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <span className="hidden sm:inline">Empresa</span>
+            </TabsTrigger>
+            <TabsTrigger value="stores" className="flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              <span className="hidden sm:inline">Lojas</span>
             </TabsTrigger>
             <TabsTrigger value="alerts" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -322,6 +327,10 @@ export default function Settings() {
               savingCompany={savingCompany}
               onUpdateCompany={handleUpdateCompany}
             />
+          </TabsContent>
+
+          <TabsContent value="stores">
+            <StoresTab />
           </TabsContent>
 
           <TabsContent value="alerts">
