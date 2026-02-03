@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Filter, X } from 'lucide-react';
+import { Calendar, Filter, X, Store } from 'lucide-react';
 import { DashboardFilters, Produto } from '@/types/mercadologico';
+import { useStores, Store as StoreType } from '@/hooks/useStores';
 
 interface FilterBarProps {
   filters: DashboardFilters;
@@ -13,6 +14,7 @@ interface FilterBarProps {
 
 export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBarProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { stores, loading: storesLoading } = useStores();
 
   // Extrair departamentos únicos dos produtos
   const departamentos = useMemo(() => {
@@ -148,9 +150,36 @@ export const FilterBar = ({ filters, onFiltersChange, produtos = [] }: FilterBar
         </div>
 
         {isExpanded && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-4 border-t">
-            {/* Loja filter - removed hardcoded options since there's no store data */}
-            {/* If store table is added, dynamically load options here */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pt-4 border-t">
+            {/* Loja filter */}
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                <Store className="w-3 h-3 inline mr-1" />
+                Loja
+              </label>
+              <Select 
+                value={filters.loja || '__all__'} 
+                onValueChange={(value) => handleFilterChange('loja', value === '__all__' ? undefined : value)}
+                disabled={storesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={storesLoading ? "Carregando..." : "Todas"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas as Lojas</SelectItem>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name} ({store.code})
+                    </SelectItem>
+                  ))}
+                  {stores.length === 0 && !storesLoading && (
+                    <SelectItem value="__none__" disabled>
+                      Nenhuma loja cadastrada
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <label className="text-sm font-medium text-muted-foreground mb-2 block">Departamento</label>

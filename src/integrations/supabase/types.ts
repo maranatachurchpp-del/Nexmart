@@ -385,6 +385,7 @@ export type Database = {
           ruptura_atual: number | null
           ruptura_esperada: number | null
           status: Database["public"]["Enums"]["status_produto"] | null
+          store_id: string | null
           subcategoria: string
           updated_at: string | null
           user_id: string
@@ -413,6 +414,7 @@ export type Database = {
           ruptura_atual?: number | null
           ruptura_esperada?: number | null
           status?: Database["public"]["Enums"]["status_produto"] | null
+          store_id?: string | null
           subcategoria: string
           updated_at?: string | null
           user_id: string
@@ -441,11 +443,20 @@ export type Database = {
           ruptura_atual?: number | null
           ruptura_esperada?: number | null
           status?: Database["public"]["Enums"]["status_produto"] | null
+          store_id?: string | null
           subcategoria?: string
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "produtos_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -589,6 +600,45 @@ export type Database = {
           report_type?: string
           time_of_day?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          state: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          state?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          state?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
